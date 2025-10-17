@@ -159,4 +159,20 @@ export default [
       }
     ]
   },
+  {
+    path: '/xinhuimed',
+    component: () =>
+      Store.getters.isMacOs ? import('@/mac/index.vue') : import('@/page/index/index.vue'),
+    redirect: '/xinhuimed/workbench/index',
+    children: [
+      {
+        path: 'workbench/index',
+        name: '工作台',
+        meta: {
+          i18n: 'workbench',
+        },
+        component: () => import(/* webpackChunkName: "views" */ '@/views/xinhuimed/workbench/index.vue'),
+      },
+    ],
+  },
 ];

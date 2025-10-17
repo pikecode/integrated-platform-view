@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <el-row>
+  <div class="container">
+    <!-- <el-row>
       <el-col :span="24">
         <third-register></third-register>
       </el-col>
@@ -1378,7 +1378,7 @@
           </basic-container>
         </el-col>
       </el-col>
-    </el-row>
+    </el-row> -->
   </div>
 </template>
 
@@ -1404,7 +1404,15 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
+.container {
+    width: 1440px;
+    min-height: 810px;
+    background-image: url('/img/wel-bg.png');
+    background-size:100% 100%;
+    margin: 0 auto;
+}
+
 .el-font-size {
   font-size: 14px;
 }

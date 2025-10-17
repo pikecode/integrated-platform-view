@@ -19,6 +19,9 @@ import App from './App.vue';
 import 'animate.css';
 import dayjs from 'dayjs';
 import 'styles/common.scss';
+import VueGridLayout from 'vue-grid-layout-v3';
+import 'reset-css'
+
 // 系统组件
 import debug from './debug';
 import VueClipboard from 'vue3-clipboard';
@@ -64,6 +67,8 @@ app.use(router);
 app.use(ElementPlus, {
   locale: messages[language],
 });
+app.use(VueGridLayout)
+
 app.use(Avue, {
   axios,
   calcHeight: 10,
@@ -74,4 +79,5 @@ app.use(VueClipboard, {
   autoSetContainer: true,
   appendToBody: true, // 这可以帮助解决一些更复杂的使用场景下的问题
 });
+
 app.mount('#app');
