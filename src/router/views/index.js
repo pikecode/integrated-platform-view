@@ -123,4 +123,40 @@ export default [
       },
     ],
   },
+  {
+    path: '/workflow',
+    component: Layout,
+    children: [
+      {
+        path: 'design/process/:id',
+        name: '模型设计2',
+        component: () =>
+          import( /* webpackChunkName: "views" */ '@/views/plugin/workflow/pages/design/index.vue'),
+      },
+      {
+        path: 'design/model/history/:id',
+        name: '模型历史',
+        component: () =>
+          import( /* webpackChunkName: "views" */ '@/views/plugin/workflow/pages/design/model-history.vue'),
+      },
+      {
+        path: 'design/form/history/:id',
+        name: '表单历史',
+        component: () =>
+          import( /* webpackChunkName: "views" */ '@/views/plugin/workflow/pages/design/form-history.vue'),
+      },
+      {
+        path: 'process/start/:params',
+        name: '新建流程2',
+        component: () =>
+          import( /* webpackChunkName: "views" */ '@/views/plugin/workflow/pages/process/form/start.vue'),
+      },
+      {
+        path: 'process/detail/:params',
+        name: '流程详情',
+        component: () =>
+          import( /* webpackChunkName: "views" */ '@/views/plugin/workflow/pages/process/form/detail.vue'),
+      }
+    ]
+  },
 ];
