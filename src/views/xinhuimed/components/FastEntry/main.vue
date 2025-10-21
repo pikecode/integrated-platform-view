@@ -21,14 +21,21 @@ import { ref } from "vue";
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
 import { cryptoEncrypt } from '@/views/xinhuimed/utils/index'
+import dayjs from "dayjs";
 
 const route = useRoute()
 const store = useStore()
 
 const handleClick = (item) => {
     const userInfo = store.getters.userInfo
-    console.log(userInfo)
-    window.open(item.url + `${cryptoEncrypt(userInfo?.account)}`, '_blank')
+    let key = ''
+    if(item.url.includes('channel=')) {
+      const timestamp = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      key = cryptoEncrypt(userInfo?.account + ',' + timestamp)
+    } else {
+      key = cryptoEncrypt(userInfo?.account)
+    }
+    window.open(item.url + key, '_blank')
 }
 
 const fastEntryList = ref([

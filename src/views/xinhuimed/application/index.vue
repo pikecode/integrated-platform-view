@@ -54,12 +54,13 @@
       </div>
   
     </div>
-  </template>
+</template>
   
-  <script setup>
+<script setup>
   import { ref } from "vue";
   import { useStore } from 'vuex'
   import { cryptoEncrypt } from '@/views/xinhuimed/utils/index'
+  import dayjs from "dayjs";
 
   const store = useStore()
 
@@ -260,12 +261,19 @@
   // 点击应用跳转
   const redirect = (item) => {
     const userInfo = store.getters.userInfo
-    window.open(item.redirectUri + `${cryptoEncrypt(userInfo?.account)}`, '_blank')
+    let key = ''
+    if(item.redirectUri.includes('channel=')) {
+      const timestamp = dayjs().format('YYYY-MM-DD HH:mm:ss')
+      key = cryptoEncrypt(userInfo?.account + ',' + timestamp)
+    } else {
+      key = cryptoEncrypt(userInfo?.account)
+    }
+    window.open(item.redirectUri + key, '_blank')
   }
   
-  </script>
+</script>
   
-  <style lang="scss" scoped>
+<style lang="scss" scoped>
   header {
     height: 212px;
     background-image: url("/img/app/banner.png");
@@ -412,5 +420,5 @@
   
     }
   }
-  </style>
+</style>
   
