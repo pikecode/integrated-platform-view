@@ -39,10 +39,10 @@ const fastEntryList = ref([
         url: 'http://zhidu.v3.xinhuimed.net//v3/#/login?ticket='
     },
     {
-        "title": '督查管理系统',
+        "title": '质控督查管理系统',
         icon: '/img/fastEntry/personnelMatters.png',
         bgc: '#d9f5ff',
-        url: 'https://bi.hskj.cc/?auth_token='
+        url: 'https://bi.hskj.cc/?channel=zhidu&auth_token='
     },
     {
         "title": '任务督办管理系统',

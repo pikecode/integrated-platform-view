@@ -104,11 +104,11 @@
       redirectUri: 'http://visual.xinhuimed.net?ticket='
     },
     {
-      title: '督查管理系统',
+      title: '质控督查管理系统',
       describe: '轻量好用的督查管理工具',
       icon: 'task',
       bac: '#6F77EC',
-      redirectUri: 'https://bi.hskj.cc/?auth_token='
+      redirectUri: 'https://bi.hskj.cc/?channel=zhidu&auth_token='
     },
     {
       title: '制度管理',
