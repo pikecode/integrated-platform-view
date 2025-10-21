@@ -59,7 +59,7 @@
 <script setup>
   import { ref } from "vue";
   import { useStore } from 'vuex'
-  import { cryptoEncrypt } from '@/views/xinhuimed/utils/index'
+  import { cryptoEncrypt, cryptoEncryptUrl } from '@/views/xinhuimed/utils/index'
   import dayjs from "dayjs";
 
   const store = useStore()
@@ -264,7 +264,7 @@
     let key = ''
     if(item.redirectUri.includes('channel=')) {
       const timestamp = dayjs().format('YYYY-MM-DD HH:mm:ss')
-      key = cryptoEncrypt(userInfo?.account + ',' + timestamp)
+      key = cryptoEncryptUrl(userInfo?.account + ',' + timestamp)
     } else {
       key = cryptoEncrypt(userInfo?.account)
     }

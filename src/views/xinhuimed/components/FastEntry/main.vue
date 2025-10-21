@@ -20,7 +20,7 @@
 import { ref } from "vue";
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { cryptoEncrypt } from '@/views/xinhuimed/utils/index'
+import { cryptoEncrypt, cryptoEncryptUrl } from '@/views/xinhuimed/utils/index'
 import dayjs from "dayjs";
 
 const route = useRoute()
@@ -31,10 +31,12 @@ const handleClick = (item) => {
     let key = ''
     if(item.url.includes('channel=')) {
       const timestamp = dayjs().format('YYYY-MM-DD HH:mm:ss')
-      key = cryptoEncrypt(userInfo?.account + ',' + timestamp)
+      console.log(userInfo?.account + ',' + timestamp)
+      key = cryptoEncryptUrl(userInfo?.account + ',' + timestamp)
     } else {
       key = cryptoEncrypt(userInfo?.account)
     }
+    console.log(item.url + key)
     window.open(item.url + key, '_blank')
 }
 
