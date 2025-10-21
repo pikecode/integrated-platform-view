@@ -171,7 +171,23 @@ export default [
         meta: {
           i18n: 'workbench',
         },
-        component: () => import(/* webpackChunkName: "views" */ '@/views/xinhuimed/workbench/index.vue'),
+        component: () => import(/* webpackChunkName: "workbench" */ '@/views/xinhuimed/workbench/index.vue'),
+      },
+      {
+        path: 'process/index',
+        name: '流程',
+        meta: {
+          i18n: 'process',
+        },
+        component: () => import(/* webpackChunkName: "process" */ '@/views/xinhuimed/process/index.vue'),
+      },
+      {
+        path: 'application/index',
+        name: '应用中心',
+        meta: {
+          i18n: 'application',
+        },
+        component: () => import(/* webpackChunkName: "application" */ '@/views/xinhuimed/application/index.vue'),
       },
     ],
   },
