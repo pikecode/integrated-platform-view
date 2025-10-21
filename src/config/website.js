@@ -2,10 +2,10 @@
  * 全局配置文件
  */
 export default {
-  title: 'Saber',
+  title: '现代化医院综合管理平台',
   logo: 'X',
   key: 'saber', //配置主键,目前用于存储
-  indexTitle: 'BladeX 微服务平台',
+  indexTitle: '现代化医院综合管理平台',
   clientId: 'saber3', // 客户端id
   clientSecret: 'saber3_secret', // 客户端密钥
   tenantMode: true, // 是否开启租户模式
@@ -59,7 +59,7 @@ export default {
     // 是否开启注册功能
     registerMode: true,
     // 使用后端工程 @org.springblade.test.Sm2KeyGenerator 获取
-    publicKey: '请配置国密sm2公钥',
+    publicKey: '04efec8c44e69f0a318b7ff8b62aa80e883dedb2ecbda180959189a554a397ea303b25995c31d3b67fa3594eee0d5485b20ee09aafe213530368b8d6b28b040dcb',
     // 第三方系统授权地址
     authUrl: 'http://localhost/blade-auth/oauth/render',
     // 单点登录系统认证

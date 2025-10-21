@@ -54,8 +54,8 @@ export default ({
       port: 2888,
       proxy: {
         '/api': {
-          target: 'http://localhost',
-          //target: 'https://saber3.bladex.cn/api',
+          target: 'http://192.168.1.173:2888',
+          target: 'http://192.168.1.173:2888/api',
           changeOrigin: true,
           rewrite: path => path.replace(/^\/api/, ''),
         },

@@ -6,7 +6,7 @@
         </div>
 
         <div class="fastEntry-list">
-            <div :class="{'fastEntry-item': true, 'deptPath': route.path === '/dept/index'}" v-for="(item, index) in fastEntryList" :key="index">
+            <div :class="{'fastEntry-item': true, 'deptPath': route.path === '/dept/index'}" v-for="(item, index) in fastEntryList" :key="index" @click="handleClick(item)">
                 <div class="image" :style="{'background-color': item.bgc}">
                     <img :src="item.icon">
                 </div>
@@ -19,60 +19,104 @@
 <script setup>
 import { ref } from "vue";
 import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
+import CryptoJS from 'crypto-js'
 
 const route = useRoute()
+const store = useStore()
+
+const cryptoEncrypt = (word) => {
+  const AES_IV = ''
+  const AES_KEY = '3D22065B41BE6C8B'
+
+  const key = CryptoJS.enc.Utf8.parse(AES_KEY)
+  const iv = CryptoJS.enc.Utf8.parse(AES_IV)
+  const srcs = CryptoJS.enc.Utf8.parse(word)
+  let encrypted = ''
+
+  encrypted = CryptoJS.AES.encrypt(srcs, key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7
+  })
+  return encrypted.ciphertext.toString(CryptoJS.enc.Base64)
+}
+
+const handleClick = (item) => {
+    const userInfo = store.getters.userInfo
+    console.log(userInfo)
+    window.open(item.url + `${cryptoEncrypt(userInfo?.account)}`, '_blank')
+}
 
 const fastEntryList = ref([
     {
-        "title": '一体化综合平台(美化)',
-        icon: '/img/fastEntry/integratedPlatform.png',
-        bgc: '#dee8ff'
+        "title": '制度管理系统',
+        icon: '/img/fastEntry/taskSupervision.png',
+        bgc: '#dee8ff',
+        url: 'http://zhidu.v3.xinhuimed.net//v3/#/login?ticket='
     },
     {
-        "title": '人事管理系统',
+        "title": '督查管理系统',
         icon: '/img/fastEntry/personnelMatters.png',
-        bgc: '#d9f5ff'
-    },
-    {
-        "title": '知识库-it场景落地',
-        icon: '/img/fastEntry/knowledgebaseItScenarioLanding.png',
-        bgc: '#d7f8f4'
-    },
-    {
-        "title": '科教管理系统',
-        icon: '/img/fastEntry/scienceEducation.png',
-        bgc: '#f0e5fc'
-    },
-    {
-        "title": '医疗质量+质控BI',
-        icon: '/img/fastEntry/qualityControl.png',
-        bgc: '#d9f5ff'
+        bgc: '#d9f5ff',
+        url: 'https://bi.hskj.cc/?auth_token='
     },
     {
         "title": '任务督办管理系统',
-        icon: '/img/fastEntry/taskSupervision.png',
-        bgc: '#dcfada'
+        icon: '/img/fastEntry/knowledgebaseItScenarioLanding.png',
+        bgc: '#d7f8f4',
+        url: 'http://rwdb.v1.xinhuimed.net/v3/#/login?ticket='
     },
     {
-        "title": '参观管理系统',
-        icon: '/img/fastEntry/visits.png',
-        bgc: '#dee8ff'
-    },
-    {
-        "title": '公文管理系统',
+        "title": '议事决策管理系统',
         icon: '/img/fastEntry/document.png',
-        bgc: '#d7f8f4'
+        bgc: '#f0e5fc',
+        url: 'http://ysjc.v1.xinhuimed.com/v3/#/login?ticket='
     },
-    {
-        "title": '等级医院评审系统',
-        icon: '/img/fastEntry/levelReview.png',
-        bgc: '#ffecd5'
-    },
-    {
-        "title": '合同管理系统',
-        icon: '/img/fastEntry/contract.png',
-        bgc: '#dee8ff'
-    }
+    // {
+    //     "title": '一体化综合平台(美化)',
+    //     icon: '/img/fastEntry/integratedPlatform.png',
+    //     bgc: '#dee8ff'
+    // },
+    // {
+    //     "title": '人事管理系统',
+    //     icon: '/img/fastEntry/personnelMatters.png',
+    //     bgc: '#d9f5ff'
+    // },
+    // {
+    //     "title": '知识库-it场景落地',
+    //     icon: '/img/fastEntry/knowledgebaseItScenarioLanding.png',
+    //     bgc: '#d7f8f4'
+    // },
+    // {
+    //     "title": '科教管理系统',
+    //     icon: '/img/fastEntry/scienceEducation.png',
+    //     bgc: '#f0e5fc'
+    // },
+    // {
+    //     "title": '医疗质量+质控BI',
+    //     icon: '/img/fastEntry/qualityControl.png',
+    //     bgc: '#d9f5ff'
+    // },
+    // {
+    //     "title": '参观管理系统',
+    //     icon: '/img/fastEntry/visits.png',
+    //     bgc: '#dee8ff'
+    // },
+    // {
+    //     "title": '公文管理系统',
+    //     icon: '/img/fastEntry/document.png',
+    //     bgc: '#d7f8f4'
+    // },
+    // {
+    //     "title": '等级医院评审系统',
+    //     icon: '/img/fastEntry/levelReview.png',
+    //     bgc: '#ffecd5'
+    // },
+    // {
+    //     "title": '合同管理系统',
+    //     icon: '/img/fastEntry/contract.png',
+    //     bgc: '#dee8ff'
+    // }
 ])
 </script>
 

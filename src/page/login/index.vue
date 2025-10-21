@@ -12,7 +12,7 @@
         <div class="login-main">
           <p class="login-title">
             {{ $t('login.title') }}{{ website.title }}
-            <top-lang></top-lang>
+            <!-- <top-lang></top-lang> -->
           </p>
           <userLogin v-if="activeName === 'user'"></userLogin>
           <codeLogin v-else-if="activeName === 'code'"></codeLogin>

@@ -79,7 +79,7 @@ export default {
   },
   login: {
     title: '登录 ',
-    info: 'BladeX 微服务平台',
+    info: '现代化医院综合管理平台',
     tenantId: '请输入租户ID',
     name: '请输入姓名',
     username: '请输入账号',
