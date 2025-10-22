@@ -61,21 +61,21 @@ export default {
     // 使用后端工程 @org.springblade.test.Sm2KeyGenerator 获取
     publicKey: '04efec8c44e69f0a318b7ff8b62aa80e883dedb2ecbda180959189a554a397ea303b25995c31d3b67fa3594eee0d5485b20ee09aafe213530368b8d6b28b040dcb',
     // 第三方系统授权地址
-    authUrl: 'http://localhost/blade-auth/oauth/render',
+    authUrl: 'http://yth.xinhuimed.net/blade-auth/oauth/render',
     // 单点登录系统认证
     ssoMode: false, // 是否开启单点登录功能
-    ssoBaseUrl: 'http://localhost:8100', // 单点登录系统地址(cloud端口为8100,boot端口为80)
+    ssoBaseUrl: 'http://yth.xinhuimed.net:8100', // 单点登录系统地址(cloud端口为8100,boot端口为80)
     ssoAuthUrl: '/oauth/authorize?client_id=saber3&response_type=code&redirect_uri=', // 单点登录授权地址
     ssoLogoutUrl: '/oauth/authorize/logout?redirect_uri=', // 单点登录退出地址
-    redirectUri: 'http://localhost:2888/login', // 单点登录回调地址(Saber服务的登录界面地址)
+    redirectUri: 'http://yth.xinhuimed.net:2888/login', // 单点登录回调地址(Saber服务的登录界面地址)
   },
   //设计器配置
   design: {
     // 流程设计器类型(true->nutflow,false->flowable)
     designMode: true,
     // 流程设计器地址(flowable模式)
-    designUrl: 'http://localhost:9999',
+    designUrl: 'http://yth.xinhuimed.net:9999',
     // 报表设计器地址(cloud端口为8108,boot端口为80)
-    reportUrl: 'http://localhost:8108/ureport',
+    reportUrl: 'http://yth.xinhuimed.net:8108/ureport',
   },
 };

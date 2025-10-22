@@ -35,7 +35,7 @@ export default {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 700;
-  padding-left: 30px;
+  padding-left: 10px;
 }
 .logo-img {
   width: 40px;

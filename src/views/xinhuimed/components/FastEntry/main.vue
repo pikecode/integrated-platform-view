@@ -65,6 +65,36 @@ const fastEntryList = ref([
         bgc: '#f0e5fc',
         url: 'http://ysjc.v1.xinhuimed.com/v3/#/login?ticket='
     },
+    {
+        "title": 'IT综合管理平台',
+        icon: '/img/fastEntry/personnelMatters.png',
+        bgc: '#dee8ff',
+        url: 'http://it.xinhuimed.net/v1/#/login?ticket='
+    },
+    {
+        "title": '医德医风管理系统',
+        icon: '/img/fastEntry/scienceEducation.png',
+        bgc: '#f0e5fc',
+        url: 'http://ydyf.v1.xinhuimed.net/v1/#/login?ticket='
+    },
+    {
+        "title": '进修管理系统',
+        icon: '/img/fastEntry/visits.png',
+        bgc: '#dee8ff',
+        url: 'http://jxgl.v1.xinhuimed.net/v3/#/login?ticket='
+    },
+    {
+        "title": '会议（规划中）',
+        icon: '/img/fastEntry/contract.png',
+        bgc: '#dee8ff',
+        url: 'https://yerh96.axshare.com?ticket='
+    },  
+    {
+        "title": '公文（规划中）',
+        icon: '/img/fastEntry/document.png',
+        bgc: '#d7f8f4',
+        url: 'https://noc85c.axshare.com?ticket='
+    }
     // {
     //     "title": '一体化综合平台(美化)',
     //     icon: '/img/fastEntry/integratedPlatform.png',
