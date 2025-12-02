@@ -191,4 +191,149 @@ export default [
       },
     ],
   },
+  {
+    path: '/decision',
+    component: Layout,
+    redirect: '/decision/index',
+    meta: {
+      isAuth: false,
+    },
+    children: [
+      {
+        path: 'index',
+        name: '议事决策',
+        meta: {
+          i18n: 'decision',
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/index.vue'),
+      },
+      {
+        path: 'topic',
+        name: '议题管理',
+        meta: {
+          i18n: 'decision',
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+      },
+      {
+        path: 'topic/create',
+        name: '新建议题',
+        meta: {
+          i18n: 'decision',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+      },
+      {
+        path: 'topic/detail/:id',
+        name: '议题详情',
+        meta: {
+          i18n: 'decision',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+      },
+      {
+        path: 'topic/vote/:id',
+        name: '投票',
+        meta: {
+          i18n: 'decision',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+      },
+      {
+        path: 'task',
+        name: '任务管理',
+        meta: {
+          i18n: 'decision',
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+      },
+      {
+        path: 'task/create',
+        name: '新建任务',
+        meta: {
+          i18n: 'decision',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+      },
+      {
+        path: 'task/detail/:id',
+        name: '任务详情',
+        meta: {
+          i18n: 'decision',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+      },
+      {
+        path: 'task/my-tasks',
+        name: '我的任务',
+        meta: {
+          i18n: 'decision',
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+      },
+    ],
+  },
+  {
+    path: '/employee',
+    component: Layout,
+    redirect: '/employee/index',
+    meta: {
+      isAuth: false,  // 开发阶段：暂不需要认证
+    },
+    children: [
+      {
+        path: 'index',
+        name: '员工管理',
+        meta: {
+          i18n: 'employee',
+          isAuth: false,  // 开发阶段：暂不需要认证
+        },
+        component: () => import(/* webpackChunkName: "employee" */ '@/views/employee/pages/index.vue'),
+      },
+      {
+        path: 'list',
+        name: '员工列表',
+        meta: {
+          i18n: 'employee',
+          isAuth: false,
+          menu: false,
+        },
+        component: () => import(/* webpackChunkName: "employee" */ '@/views/employee/pages/list.vue'),
+      },
+      {
+        path: 'add',
+        name: '新增员工',
+        meta: {
+          i18n: 'employee',
+          isAuth: false,
+          menu: false,
+        },
+        component: () => import(/* webpackChunkName: "employee" */ '@/views/employee/pages/form.vue'),
+      },
+      {
+        path: 'edit/:id',
+        name: '编辑员工',
+        meta: {
+          i18n: 'employee',
+          isAuth: false,
+          menu: false,
+        },
+        component: () => import(/* webpackChunkName: "employee" */ '@/views/employee/pages/form.vue'),
+      },
+    ],
+  },
 ];

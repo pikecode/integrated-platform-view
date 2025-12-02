@@ -54,10 +54,8 @@ export default ({
       port: 2888,
       proxy: {
         '/api': {
-          target: 'http://yth.xinhuimed.net/',
-          target: 'http://yth.xinhuimed.net/api',
+          target: 'http://yth.xinhuimed.net:38090',
           changeOrigin: true,
-          rewrite: path => path.replace(/^\/api/, ''),
         },
       },
     },

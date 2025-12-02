@@ -158,6 +158,17 @@ axios.interceptors.response.use(
         })
         .catch(() => {
           isRefreshing = false; // 重置刷新标志
+
+          // 检查当前路由是否允许无认证访问
+          const route = router.currentRoute.value;
+          const isAuthNotRequired = route && route.meta && route.meta.isAuth === false;
+
+          // 如果当前页面允许无认证，不强制跳转登陆页
+          if (isAuthNotRequired) {
+            console.warn('Token refresh failed, but current page allows no auth access');
+            return Promise.reject(new Error('Token invalid but page allows no auth'));
+          }
+
           // 首次报错时提示
           if (!isErrorShown) {
             isErrorShown = true;
@@ -179,6 +190,16 @@ axios.interceptors.response.use(
 
     // 如果是401并且已经重试过，直接跳转到登录页面
     if (status === 401 && config._retry) {
+      // 检查当前路由是否允许无认证访问
+      const route = router.currentRoute.value;
+      const isAuthNotRequired = route && route.meta && route.meta.isAuth === false;
+
+      // 如果当前页面允许无认证，不强制跳转登陆页
+      if (isAuthNotRequired) {
+        console.warn('Token invalid after retry, but current page allows no auth access');
+        return Promise.reject(new Error('Token invalid but page allows no auth'));
+      }
+
       if (!isErrorShown) {
         isErrorShown = true;
         ElMessage({
