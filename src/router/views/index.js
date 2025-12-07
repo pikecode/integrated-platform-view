@@ -317,6 +317,16 @@ export default [
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
       },
       {
+        path: 'task/participate',
+        name: '我参与的',
+        meta: {
+          title: '我参与的',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+      },
+      {
         path: 'dashboard',
         name: '数据看板',
         meta: {

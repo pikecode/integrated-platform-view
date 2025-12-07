@@ -23,10 +23,10 @@
             <i class="el-icon-document-copy"></i>
             <span>议题管理</span>
           </template>
-          <el-menu-item index="/decision/topic?filter=my">
+          <el-menu-item index="/decision/topic/my">
             <span>我发布的</span>
           </el-menu-item>
-          <el-menu-item index="/decision/topic?filter=pending">
+          <el-menu-item index="/decision/topic">
             <span>待我审批</span>
           </el-menu-item>
           <el-menu-item index="/decision/topic/schedule">
@@ -40,10 +40,10 @@
             <i class="el-icon-s-management"></i>
             <span>任务管理</span>
           </template>
-          <el-menu-item index="/decision/task?filter=my">
+          <el-menu-item index="/decision/task">
             <span>我发布的</span>
           </el-menu-item>
-          <el-menu-item index="/decision/task?filter=participate">
+          <el-menu-item index="/decision/task/participate">
             <span>我参与的</span>
           </el-menu-item>
         </el-sub-menu>
