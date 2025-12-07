@@ -6,7 +6,15 @@
         <span>{{ itemHome.name }}</span>
       </template>
     </el-menu-item>
-    
+
+    <!-- 议事决策模块 -->
+    <el-menu-item :index="decisionMenu.id" @click="openMenu(decisionMenu)">
+      <template #title>
+        <i :class="decisionMenu.source" style="padding-right: 5px"></i>
+        <span>{{ decisionMenu.name }}</span>
+      </template>
+    </el-menu-item>
+
     <template v-for="(item, index) in xinhuimedMennus" :key="index">
       <el-menu-item :index="item.path + ''" @click="openXinhuimedMenu(item)">
         <template #title>
@@ -40,6 +48,12 @@ export default {
       },
       activeIndex: '0',
       items: [],
+      decisionMenu: {
+        name: '议事决策',
+        path: '/decision/index',
+        source: 'el-icon-document',
+        id: 'decision'
+      },
       xinhuimedMennus: [
         { name: '工作台', path: '/xinhuimed/workbench/index' },
         { name: '门户', path: '/xinhuimed/portal/index' },
