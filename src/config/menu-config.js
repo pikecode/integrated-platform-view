@@ -3,18 +3,7 @@
  * 在后端菜单 API 不可用时使用
  */
 
-// 系统全局菜单（不属于任何特定模块）
-export const globalMenus = [
-  {
-    id: 'wel',
-    name: '首页',
-    path: '/wel/index',
-    icon: 'el-icon-s-home',
-    children: []
-  }
-];
-
-// 决策模块的独立菜单
+// 决策模块（议事决策）的菜单配置
 export const decisionMenus = [
   {
     id: 'decision-index',
@@ -84,7 +73,7 @@ export const decisionMenus = [
   }
 ];
 
-// 员工管理模块的独立菜单
+// 员工管理模块的菜单配置
 export const employeeMenus = [
   {
     id: 'employee-index',
@@ -102,22 +91,29 @@ export const employeeMenus = [
   }
 ];
 
-// 默认的全局静态菜单
+// 默认的系统全局静态菜单
+// 这个菜单用于系统的顶部菜单或全局导航
 export const staticMenus = [
-  ...globalMenus,
+  {
+    id: 'wel',
+    name: '首页',
+    path: '/wel/index',
+    icon: 'el-icon-s-home',
+    children: []
+  },
   {
     id: 'decision',
     name: '议事决策',
-    path: '/decision',
+    path: '/decision/index',
     icon: 'el-icon-document',
-    children: decisionMenus
+    children: []
   },
   {
     id: 'employee',
     name: '员工管理',
-    path: '/employee',
+    path: '/employee/index',
     icon: 'el-icon-user',
-    children: employeeMenus
+    children: []
   }
 ];
 

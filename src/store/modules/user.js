@@ -23,7 +23,7 @@ import { getRoutes, getTopMenu } from '@/api/system/menu';
 import { formatPath } from '@/router/avue-router';
 import { ElMessage } from 'element-plus';
 import { encrypt } from '@/utils/sm2';
-import { staticMenus } from '@/config/menu-config';
+import { staticMenus, decisionMenus, employeeMenus } from '@/config/menu-config';
 
 const user = {
   state: {
@@ -266,6 +266,28 @@ const user = {
     },
     GetMenu({ commit, dispatch }, topMenuId) {
       return new Promise(resolve => {
+        // 获取当前路由路径用于判断是否在模块内部
+        const currentPath = window.location.hash || '';
+
+        // 判断是否在模块内部，如果是则使用模块菜单
+        let moduleMenu = null;
+        if (currentPath.includes('#/decision')) {
+          moduleMenu = deepClone(decisionMenus);
+        } else if (currentPath.includes('#/employee')) {
+          moduleMenu = deepClone(employeeMenus);
+        }
+
+        // 如果在模块内部，直接使用模块菜单
+        if (moduleMenu) {
+          moduleMenu.forEach(ele => formatPath(ele, true));
+          commit('SET_MENU', moduleMenu);
+          commit('SET_MENU_ALL', moduleMenu);
+          dispatch('GetButtons');
+          resolve(moduleMenu);
+          return;
+        }
+
+        // 否则尝试从后端加载全局菜单
         getRoutes(topMenuId)
           .then(res => {
             const data = res.data.data;
