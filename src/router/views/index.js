@@ -197,13 +197,16 @@ export default [
     redirect: '/decision/index',
     meta: {
       isAuth: false,
+      title: '议事决策',
+      icon: 'el-icon-document',
     },
     children: [
       {
         path: 'index',
         name: '议事决策',
         meta: {
-          i18n: 'decision',
+          title: '议事决策',
+          icon: 'el-icon-home',
           isAuth: false,
         },
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/index.vue'),
@@ -212,7 +215,8 @@ export default [
         path: 'topic',
         name: '议题管理',
         meta: {
-          i18n: 'decision',
+          title: '议题管理',
+          icon: 'el-icon-document-copy',
           isAuth: false,
         },
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
@@ -221,7 +225,7 @@ export default [
         path: 'topic/create',
         name: '新建议题',
         meta: {
-          i18n: 'decision',
+          title: '新建议题',
           menu: false,
           isAuth: false,
         },
@@ -231,7 +235,7 @@ export default [
         path: 'topic/detail/:id',
         name: '议题详情',
         meta: {
-          i18n: 'decision',
+          title: '议题详情',
           menu: false,
           isAuth: false,
         },
@@ -241,7 +245,7 @@ export default [
         path: 'topic/vote/:id',
         name: '投票',
         meta: {
-          i18n: 'decision',
+          title: '投票',
           menu: false,
           isAuth: false,
         },
@@ -251,7 +255,8 @@ export default [
         path: 'task',
         name: '任务管理',
         meta: {
-          i18n: 'decision',
+          title: '任务管理',
+          icon: 'el-icon-s-management',
           isAuth: false,
         },
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
@@ -260,7 +265,7 @@ export default [
         path: 'task/create',
         name: '新建任务',
         meta: {
-          i18n: 'decision',
+          title: '新建任务',
           menu: false,
           isAuth: false,
         },
@@ -270,7 +275,7 @@ export default [
         path: 'task/detail/:id',
         name: '任务详情',
         meta: {
-          i18n: 'decision',
+          title: '任务详情',
           menu: false,
           isAuth: false,
         },
@@ -280,7 +285,8 @@ export default [
         path: 'task/my-tasks',
         name: '我的任务',
         meta: {
-          i18n: 'decision',
+          title: '我的任务',
+          icon: 'el-icon-document-copy',
           isAuth: false,
         },
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
