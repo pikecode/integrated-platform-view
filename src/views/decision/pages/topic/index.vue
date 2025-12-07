@@ -1,50 +1,161 @@
 <template>
   <basic-container>
     <!-- 搜索和操作栏 -->
-    <el-row :gutter="20" class="search-row">
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-input
-          v-model="search.title"
-          placeholder="搜索议题标题"
-          clearable
-          @keyup.enter="handleSearch"
-        />
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-select
-          v-model="search.status"
-          placeholder="选择状态"
-          clearable
-          style="width: 100%"
-        >
-          <el-option label="草稿" value="draft" />
-          <el-option label="进行中" value="active" />
-          <el-option label="投票中" value="voting" />
-          <el-option label="已结束" value="ended" />
-          <el-option label="已存档" value="archived" />
-        </el-select>
-      </el-col>
-      <el-col :xs="24" :sm="24" :md="8">
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button type="success" @click="handleCreate" v-if="permission.decision_topic_add">
-          <i class="el-icon-plus"></i> 新建议题
-        </el-button>
-      </el-col>
-    </el-row>
+    <div class="search-panel">
+      <div class="search-title">
+        <span class="highlight">选择议题/选择议题，再点击批量上会、微选择议题时点击批量申</span>
+        <span class="highlight-text">请上会，需要提示 请选择议题！</span>
+      </div>
 
-    <!-- 议题卡片列表 -->
-    <el-empty v-if="topics.length === 0" description="暂无议题" />
-    <el-row :gutter="20" v-else class="topics-grid">
-      <el-col :xs="24" :sm="12" :md="8" v-for="topic in topics" :key="topic.id">
-        <topic-card
-          :topic="topic"
-          :can-delete="canDeleteTopic(topic)"
-          @start-vote="handleStartVote"
-          @vote="handleVote"
-          @delete="handleDelete"
-        />
-      </el-col>
-    </el-row>
+      <el-form :model="search" class="search-form" label-width="100px">
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-form-item label="议题名称：">
+              <el-input
+                v-model="search.title"
+                placeholder="请输入"
+                clearable
+                @keyup.enter="handleSearch"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-form-item label="议题状态：">
+              <el-select
+                v-model="search.status"
+                placeholder="请选择议题状态（可多选）"
+                clearable
+                style="width: 100%"
+              >
+                <el-option label="议题申请中" value="draft" />
+                <el-option label="待上会" value="pending_vote" />
+                <el-option label="上会申请中" value="applying" />
+                <el-option label="已申请上会" value="approved" />
+                <el-option label="结论审批中" value="voting" />
+                <el-option label="结论录入完成" value="completed" />
+                <el-option label="已撤回" value="withdrawn" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-form-item label="申报时间：">
+              <el-date-picker
+                v-model="search.dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="24" :md="6" class="action-buttons">
+            <el-button type="primary" @click="handleSearch">查询</el-button>
+            <el-button @click="handleReset">重置</el-button>
+          </el-col>
+        </el-row>
+      </el-form>
+
+      <!-- 批量操作按钮 -->
+      <el-row :gutter="10" class="batch-actions">
+        <el-col :span="24">
+          <el-button type="primary" @click="handleCreateTopic">
+            <i class="el-icon-plus"></i> 新增议题
+          </el-button>
+          <el-button type="warning" @click="handleBatchApplyMeeting" :disabled="selectedTopics.length === 0">
+            批量申请上会
+          </el-button>
+          <el-button @click="handleExport">导出</el-button>
+          <span class="selection-info" v-if="selectedTopics.length > 0">
+            已选择 {{ selectedTopics.length }} 条议题
+          </span>
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 议题列表表格 -->
+    <el-table
+      :data="topics"
+      stripe
+      border
+      style="width: 100%; margin-top: 20px"
+      :loading="loading"
+      @selection-change="handleSelectionChange"
+      v-loading="loading"
+    >
+      <!-- 复选框列 -->
+      <el-table-column type="selection" width="50" />
+
+      <!-- 序号列 -->
+      <el-table-column label="序号" type="index" width="60" :index="getRowNumber" />
+
+      <!-- 议题名称 -->
+      <el-table-column label="议题名称" min-width="200">
+        <template slot-scope="scope">
+          <el-link type="primary" @click="handleViewDetail(scope.row.id)">
+            {{ scope.row.title }}
+          </el-link>
+        </template>
+      </el-table-column>
+
+      <!-- 议题状态 -->
+      <el-table-column label="议题状态" width="120">
+        <template slot-scope="scope">
+          <status-badge :status="scope.row.status" type="topic" />
+        </template>
+      </el-table-column>
+
+      <!-- 当前审批节点 -->
+      <el-table-column label="当前审批节点" width="150">
+        <template slot-scope="scope">
+          <span>{{ getApprovalNode(scope.row.status) }}</span>
+        </template>
+      </el-table-column>
+
+      <!-- 申报科室 -->
+      <el-table-column label="申报科室" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.department || '胸外科' }}
+        </template>
+      </el-table-column>
+
+      <!-- 科室分管领导 -->
+      <el-table-column label="科室分管领导" width="120">
+        <template slot-scope="scope">
+          {{ scope.row.leader || '张三' }}
+        </template>
+      </el-table-column>
+
+      <!-- 申请时间 -->
+      <el-table-column label="申请时间" width="180">
+        <template slot-scope="scope">
+          {{ formatTime(scope.row.createdAt) }}
+        </template>
+      </el-table-column>
+
+      <!-- 操作 -->
+      <el-table-column label="操作" width="200" fixed="right">
+        <template slot-scope="scope">
+          <el-button-group>
+            <el-button type="primary" size="small" @click="handleViewDetail(scope.row.id)">
+              查看详情
+            </el-button>
+            <el-dropdown @command="handleCommand($event, scope.row)">
+              <el-button type="primary" size="small">
+                更多 <i class="el-icon-arrow-down"></i>
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item command="edit" v-if="canEdit(scope.row)">编辑</el-dropdown-item>
+                <el-dropdown-item command="apply" v-if="canApply(scope.row)">申请上会</el-dropdown-item>
+                <el-dropdown-item command="vote" v-if="canVote(scope.row)">投票</el-dropdown-item>
+                <el-dropdown-item command="withdraw" v-if="canWithdraw(scope.row)">撤回</el-dropdown-item>
+                <el-dropdown-item command="delete" v-if="canDelete(scope.row)">删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </el-button-group>
+        </template>
+      </el-table-column>
+    </el-table>
 
     <!-- 分页 -->
     <el-pagination
@@ -54,6 +165,7 @@
       :total="total"
       @current-change="handlePageChange"
       @size-change="handleSizeChange"
+      :page-sizes="[5, 10, 15, 20]"
       layout="total, sizes, prev, pager, next, jumper"
       style="margin-top: 20px; text-align: right"
     />
@@ -62,26 +174,28 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import TopicCard from '../../components/topic-card/index.vue';
+import StatusBadge from '../../components/status-badge/index.vue';
 import * as topicApi from '@/api/decision/topic';
 import topicMixin from '../../mixins/topic';
 
 export default {
   name: 'TopicManagement',
   components: {
-    TopicCard
+    StatusBadge
   },
   mixins: [topicMixin],
   data() {
     return {
       topics: [],
+      selectedTopics: [],
       search: {
         title: '',
-        status: ''
+        status: '',
+        dateRange: null
       },
       page: {
         currentPage: 1,
-        pageSize: 12
+        pageSize: 10
       },
       total: 0,
       loading: true
@@ -116,6 +230,16 @@ export default {
       this.loadTopics();
     },
 
+    handleReset() {
+      this.search = {
+        title: '',
+        status: '',
+        dateRange: null
+      };
+      this.page.currentPage = 1;
+      this.loadTopics();
+    },
+
     handlePageChange(page) {
       this.page.currentPage = page;
       this.loadTopics();
@@ -127,40 +251,233 @@ export default {
       this.loadTopics();
     },
 
-    handleCreate() {
+    handleSelectionChange(selection) {
+      this.selectedTopics = selection;
+    },
+
+    getRowNumber(index) {
+      return (this.page.currentPage - 1) * this.page.pageSize + index + 1;
+    },
+
+    formatTime(time) {
+      if (!time) return '-';
+      return new Date(time).toLocaleString('zh-CN');
+    },
+
+    getApprovalNode(status) {
+      const nodeMap = {
+        'draft': '议题草稿',
+        'pending_vote': '待审批',
+        'applying': '申请中',
+        'approved': '已审批',
+        'voting': '投票中',
+        'completed': '已完成',
+        'withdrawn': '已撤回'
+      };
+      return nodeMap[status] || '未知';
+    },
+
+    handleCreateTopic() {
       this.$router.push('/decision/topic/create');
     },
 
-    handleStartVote(topicId) {
-      this.startVote(topicId);
+    handleViewDetail(topicId) {
+      this.$router.push(`/decision/topic/detail/${topicId}`);
     },
 
-    handleVote(topicId) {
-      this.$router.push(`/decision/topic/vote/${topicId}`);
+    handleBatchApplyMeeting() {
+      if (this.selectedTopics.length === 0) {
+        this.$message.warning('请先选择议题');
+        return;
+      }
+      this.$message.success(`已选择 ${this.selectedTopics.length} 个议题，批量申请上会`);
+      // 实现批量申请逻辑
+    },
+
+    handleExport() {
+      this.$message.info('导出功能开发中');
+    },
+
+    handleCommand(command, row) {
+      switch (command) {
+        case 'edit':
+          this.$router.push(`/decision/topic/detail/${row.id}`);
+          break;
+        case 'apply':
+          this.$message.success('已申请上会');
+          break;
+        case 'vote':
+          this.$router.push(`/decision/topic/vote/${row.id}`);
+          break;
+        case 'withdraw':
+          this.handleWithdraw(row.id);
+          break;
+        case 'delete':
+          this.handleDelete(row.id);
+          break;
+        default:
+          break;
+      }
     },
 
     handleDelete(topicId) {
-      this.deleteTopic(topicId);
+      this.$confirm('确定删除此议题吗？', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        try {
+          await topicApi.remove(topicId);
+          this.$message.success('删除成功');
+          this.loadTopics();
+        } catch (error) {
+          this.$message.error('删除失败');
+        }
+      }).catch(() => {
+        // 用户取消删除
+      });
     },
 
-    canDeleteTopic(topic) {
-      // 只有草稿状态的议题才能删除，或者是创建者
-      return (topic.status === 'draft') || (topic.creatorId === this.userInfo.id);
+    handleWithdraw(topicId) {
+      this.$confirm('确定撤回此议题吗？', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$message.success('已撤回');
+        this.loadTopics();
+      }).catch(() => {
+        // 用户取消撤回
+      });
+    },
+
+    canEdit(row) {
+      return row.status === 'draft' || row.creator === this.userInfo.name;
+    },
+
+    canApply(row) {
+      return row.status === 'draft' || row.status === 'pending_vote';
+    },
+
+    canVote(row) {
+      return row.status === 'voting';
+    },
+
+    canWithdraw(row) {
+      return ['draft', 'pending_vote', 'applying'].includes(row.status);
+    },
+
+    canDelete(row) {
+      return row.status === 'draft' || row.creator === this.userInfo.name;
     }
   }
 };
 </script>
 
 <style scoped lang="scss">
-.search-row {
-  margin-bottom: 20px;
-  padding: 15px;
+.search-panel {
   background: white;
   border-radius: 6px;
+  padding: 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+
+  .search-title {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #856404;
+
+    .highlight {
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+
+    .highlight-text {
+      margin-left: 10px;
+      color: #ff6b6b;
+      font-weight: bold;
+    }
+  }
+
+  .search-form {
+    margin-bottom: 15px;
+
+    ::v-deep .el-form-item {
+      margin-bottom: 10px;
+    }
+
+    .action-buttons {
+      display: flex;
+      align-items: center;
+
+      .el-button {
+        width: 100%;
+
+        &:not(:last-child) {
+          margin-right: 10px;
+        }
+      }
+    }
+  }
+
+  .batch-actions {
+    padding: 10px 0;
+    border-top: 1px solid #dcdfe6;
+
+    .el-button {
+      margin-right: 10px;
+
+      &:disabled {
+        opacity: 0.6;
+      }
+    }
+
+    .selection-info {
+      color: #909399;
+      margin-left: 10px;
+    }
+  }
 }
 
-.topics-grid {
-  margin-bottom: 20px;
+::v-deep .el-table {
+  font-size: 13px;
+
+  .el-table__header-wrapper {
+    background: #f5f7fa;
+  }
+
+  .el-table__body-wrapper {
+    max-height: none;
+  }
+
+  .el-table__row:hover > td {
+    background-color: #f5f7fa;
+  }
+
+  .el-button-group {
+    .el-button {
+      padding: 5px 10px;
+      font-size: 12px;
+      height: 28px;
+      line-height: 28px;
+    }
+  }
+}
+
+::v-deep .el-pagination {
+  margin-top: 20px;
+  text-align: right;
+
+  .btn-prev,
+  .btn-next,
+  .el-pager li,
+  .el-icon,
+  .el-input {
+    font-size: 12px;
+  }
 }
 </style>
