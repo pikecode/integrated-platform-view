@@ -23,6 +23,7 @@ import { getRoutes, getTopMenu } from '@/api/system/menu';
 import { formatPath } from '@/router/avue-router';
 import { ElMessage } from 'element-plus';
 import { encrypt } from '@/utils/sm2';
+import { staticMenus } from '@/config/menu-config';
 
 const user = {
   state: {
@@ -265,15 +266,37 @@ const user = {
     },
     GetMenu({ commit, dispatch }, topMenuId) {
       return new Promise(resolve => {
-        getRoutes(topMenuId).then(res => {
-          const data = res.data.data;
-          let menu = deepClone(data);
-          menu.forEach(ele => formatPath(ele, true));
-          commit('SET_MENU', menu);
-          commit('SET_MENU_ALL', menu);
-          dispatch('GetButtons');
-          resolve(menu);
-        });
+        getRoutes(topMenuId)
+          .then(res => {
+            const data = res.data.data;
+            if (data && data.length > 0) {
+              let menu = deepClone(data);
+              menu.forEach(ele => formatPath(ele, true));
+              commit('SET_MENU', menu);
+              commit('SET_MENU_ALL', menu);
+              dispatch('GetButtons');
+              resolve(menu);
+            } else {
+              // 后端菜单为空，使用静态菜单配置
+              console.warn('后端菜单为空，使用静态菜单配置');
+              const menu = deepClone(staticMenus);
+              menu.forEach(ele => formatPath(ele, true));
+              commit('SET_MENU', menu);
+              commit('SET_MENU_ALL', menu);
+              dispatch('GetButtons');
+              resolve(menu);
+            }
+          })
+          .catch(err => {
+            // 后端菜单加载失败，使用静态菜单配置
+            console.warn('后端菜单加载失败，使用静态菜单配置:', err.message);
+            const menu = deepClone(staticMenus);
+            menu.forEach(ele => formatPath(ele, true));
+            commit('SET_MENU', menu);
+            commit('SET_MENU_ALL', menu);
+            dispatch('GetButtons');
+            resolve(menu);
+          });
       });
     },
     GetButtons({ commit }) {
