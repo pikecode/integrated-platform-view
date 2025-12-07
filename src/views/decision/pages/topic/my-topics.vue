@@ -1,13 +1,7 @@
 <template>
   <div class="my-topics-page">
     <!-- 面包屑导航 -->
-    <div class="breadcrumb-nav">
-      <span class="breadcrumb-item">议事决策</span>
-      <span class="separator">/</span>
-      <span class="breadcrumb-item">议题管理</span>
-      <span class="separator">/</span>
-      <span class="breadcrumb-item active">我发布的</span>
-    </div>
+    <decision-breadcrumb :breadcrumbs="['议题管理', '我发布的']" />
 
     <!-- Tab 标签切换 -->
     <div class="topic-tabs">
@@ -206,6 +200,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
 import * as topicApi from '@/api/decision/topic';
 import topicMixin from '../../mixins/topic';
@@ -213,6 +208,7 @@ import topicMixin from '../../mixins/topic';
 export default {
   name: 'MyTopics',
   components: {
+    DecisionBreadcrumb,
     StatusBadge
   },
   mixins: [topicMixin],
@@ -430,24 +426,6 @@ export default {
   background: white;
   border-radius: 6px;
   padding: 24px;
-
-  .breadcrumb-nav {
-    margin-bottom: 20px;
-    font-size: 14px;
-    color: #606266;
-
-    .breadcrumb-item {
-      &.active {
-        color: #303133;
-        font-weight: 600;
-      }
-    }
-
-    .separator {
-      margin: 0 8px;
-      color: #bfbfbf;
-    }
-  }
 
   .topic-tabs {
     margin-bottom: 20px;

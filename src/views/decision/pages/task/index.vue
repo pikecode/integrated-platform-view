@@ -1,5 +1,8 @@
 <template>
   <basic-container>
+    <!-- 面包屑导航 -->
+    <decision-breadcrumb :breadcrumbs="['任务管理', '我发布的']" />
+
     <!-- 搜索和操作栏 -->
     <el-row :gutter="20" class="search-row">
       <el-col :xs="24" :sm="12" :md="8">
@@ -61,6 +64,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import TaskItem from '../../components/task-item/index.vue';
 import * as taskApi from '@/api/decision/task';
 import taskMixin from '../../mixins/task';
@@ -68,6 +72,7 @@ import taskMixin from '../../mixins/task';
 export default {
   name: 'TaskManagement',
   components: {
+    DecisionBreadcrumb,
     TaskItem
   },
   mixins: [taskMixin],

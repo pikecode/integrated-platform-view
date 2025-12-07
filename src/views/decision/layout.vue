@@ -89,15 +89,27 @@ export default {
       pageMap: {
         '/decision/index': '首页',
         '/decision/topic': '议题管理',
+        '/decision/topic/my': '我发布的',
+        '/decision/topic/schedule': '议程安排',
+        '/decision/topic/create': '新建议题',
+        '/decision/topic/detail': '议题详情',
+        '/decision/topic/vote': '投票',
         '/decision/task': '任务管理',
+        '/decision/task/participate': '我参与的',
+        '/decision/task/create': '新建任务',
+        '/decision/task/detail': '任务详情',
+        '/decision/task/my-tasks': '我的任务',
         '/decision/dashboard': '数据看板'
-      }
+      },
+      breadcrumbs: []
     };
   },
   computed: {
     currentPageTitle() {
       const path = this.$route.path;
-      return this.pageMap[path] || '议事决策';
+      // 获取基础路径或完整路径
+      const matchedPath = Object.keys(this.pageMap).find(key => path.startsWith(key));
+      return this.pageMap[matchedPath] || this.pageMap[path] || '议事决策';
     }
   },
   watch: {
@@ -164,7 +176,7 @@ export default {
       padding: 12px 0;
 
       ::v-deep .el-menu-item {
-        padding: 0 20px;
+        padding: 0 0 0 20px;
         height: 40px;
         line-height: 40px;
         color: #606266;
@@ -190,7 +202,7 @@ export default {
       }
 
       ::v-deep .el-sub-menu__title {
-        padding: 0 20px;
+        padding: 0 0 0 20px;
         height: 40px;
         line-height: 40px;
         color: #606266;

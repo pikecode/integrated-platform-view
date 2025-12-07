@@ -1,5 +1,8 @@
 <template>
   <basic-container>
+    <!-- 面包屑导航 -->
+    <decision-breadcrumb :breadcrumbs="['议题管理', '待我审批']" />
+
     <!-- 搜索和操作栏 -->
     <div class="search-panel">
       <div class="search-title">
@@ -174,6 +177,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
 import * as topicApi from '@/api/decision/topic';
 import topicMixin from '../../mixins/topic';
@@ -181,6 +185,7 @@ import topicMixin from '../../mixins/topic';
 export default {
   name: 'TopicManagement',
   components: {
+    DecisionBreadcrumb,
     StatusBadge
   },
   mixins: [topicMixin],

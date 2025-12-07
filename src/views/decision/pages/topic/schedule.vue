@@ -1,13 +1,7 @@
 <template>
   <div class="schedule-page">
     <!-- 面包屑导航 -->
-    <div class="breadcrumb-nav">
-      <span class="breadcrumb-item">议事决策</span>
-      <span class="separator">/</span>
-      <span class="breadcrumb-item">议题管理</span>
-      <span class="separator">/</span>
-      <span class="breadcrumb-item active">议程安排</span>
-    </div>
+    <decision-breadcrumb :breadcrumbs="['议题管理', '议程安排']" />
 
     <!-- 操作按钮区 -->
     <div class="action-bar">
@@ -176,10 +170,14 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import * as topicApi from '@/api/decision/topic';
 
 export default {
   name: 'TopicSchedule',
+  components: {
+    DecisionBreadcrumb
+  },
   data() {
     return {
       selectedDate: new Date(),
@@ -392,24 +390,6 @@ export default {
   background: white;
   border-radius: 6px;
   padding: 24px;
-
-  .breadcrumb-nav {
-    margin-bottom: 20px;
-    font-size: 14px;
-    color: #606266;
-
-    .breadcrumb-item {
-      &.active {
-        color: #303133;
-        font-weight: 600;
-      }
-    }
-
-    .separator {
-      margin: 0 8px;
-      color: #bfbfbf;
-    }
-  }
 
   .action-bar {
     margin-bottom: 20px;

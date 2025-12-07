@@ -1,5 +1,8 @@
 <template>
   <basic-container>
+    <!-- 面包屑导航 -->
+    <decision-breadcrumb :breadcrumbs="['首页']" />
+
     <!-- 统计卡片 -->
     <el-row :gutter="20" class="statistics-row">
       <el-col :xs="24" :sm="12" :md="6">
@@ -128,6 +131,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
+import DecisionBreadcrumb from '../components/breadcrumb.vue';
 import TopicCard from '../components/topic-card/index.vue';
 import TaskItem from '../components/task-item/index.vue';
 import * as topicApi from '@/api/decision/topic';
@@ -138,6 +142,7 @@ import taskMixin from '../mixins/task';
 export default {
   name: 'DecisionIndex',
   components: {
+    DecisionBreadcrumb,
     TopicCard,
     TaskItem
   },
