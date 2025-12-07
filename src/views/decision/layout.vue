@@ -2,10 +2,6 @@
   <div class="decision-layout">
     <!-- 左侧导航栏 -->
     <div class="decision-sidebar">
-      <div class="sidebar-header">
-        <h2>议事决策</h2>
-      </div>
-
       <el-menu
         :default-active="activeMenu"
         class="sidebar-menu"
@@ -58,24 +54,8 @@
 
     <!-- 右侧主内容区 -->
     <div class="decision-main">
-      <!-- 顶部工具栏 -->
-      <div class="decision-header">
-        <div class="header-left">
-          <span class="breadcrumb">议事决策</span>
-          <span class="separator">/</span>
-          <span class="current-page">{{ currentPageTitle }}</span>
-        </div>
-        <div class="header-right">
-          <el-button type="primary" size="small" @click="handleRefresh">
-            <i class="el-icon-refresh"></i> 刷新
-          </el-button>
-        </div>
-      </div>
-
       <!-- 页面内容 -->
-      <div class="decision-content">
-        <router-view />
-      </div>
+      <router-view />
     </div>
   </div>
 </template>

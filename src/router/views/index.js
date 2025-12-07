@@ -193,7 +193,7 @@ export default [
   },
   {
     path: '/decision',
-    component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/layout.vue'),
+    component: Layout,
     redirect: '/decision/index',
     meta: {
       isAuth: false,
@@ -202,6 +202,10 @@ export default [
       menu: false,
     },
     children: [
+      {
+        path: '',
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/wrapper.vue'),
+        children: [
       {
         path: 'index',
         name: '议事决策',
@@ -337,6 +341,8 @@ export default [
         },
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/index.vue'),
       },
+        ]
+      }
     ],
   },
   {
