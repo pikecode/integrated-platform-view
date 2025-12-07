@@ -2,9 +2,8 @@
   <div class="breadcrumb-nav">
     <span class="breadcrumb-item">议事决策</span>
     <span class="separator">/</span>
-    <template v-for="(item, index) in breadcrumbs">
+    <template v-for="(item, index) in breadcrumbs" :key="`breadcrumb-${index}`">
       <span
-        :key="`breadcrumb-${index}`"
         class="breadcrumb-item"
         :class="{ active: index === breadcrumbs.length - 1 }"
       >
@@ -12,7 +11,6 @@
       </span>
       <span
         v-if="index < breadcrumbs.length - 1"
-        :key="`separator-${index}`"
         class="separator"
       >
         /
