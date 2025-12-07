@@ -3,71 +3,121 @@
  * 在后端菜单 API 不可用时使用
  */
 
-export const staticMenus = [
+// 系统全局菜单（不属于任何特定模块）
+export const globalMenus = [
   {
     id: 'wel',
     name: '首页',
     path: '/wel/index',
     icon: 'el-icon-s-home',
     children: []
+  }
+];
+
+// 决策模块的独立菜单
+export const decisionMenus = [
+  {
+    id: 'decision-index',
+    name: '首页',
+    path: '/decision/index',
+    icon: 'el-icon-home',
+    children: []
   },
+  {
+    id: 'decision-topic',
+    name: '议题管理',
+    path: '/decision/topic',
+    icon: 'el-icon-document-copy',
+    children: [
+      {
+        id: 'decision-topic-list',
+        name: '议题列表',
+        path: '/decision/topic',
+        children: []
+      },
+      {
+        id: 'decision-topic-my',
+        name: '我发布的',
+        path: '/decision/topic?filter=my',
+        children: []
+      },
+      {
+        id: 'decision-topic-pending',
+        name: '待我审批',
+        path: '/decision/topic?filter=pending',
+        children: []
+      }
+    ]
+  },
+  {
+    id: 'decision-task',
+    name: '任务管理',
+    path: '/decision/task',
+    icon: 'el-icon-s-management',
+    children: [
+      {
+        id: 'decision-task-list',
+        name: '任务列表',
+        path: '/decision/task',
+        children: []
+      },
+      {
+        id: 'decision-task-my',
+        name: '我发布的',
+        path: '/decision/task?filter=my',
+        children: []
+      },
+      {
+        id: 'decision-task-participate',
+        name: '我参与的',
+        path: '/decision/task?filter=participate',
+        children: []
+      }
+    ]
+  },
+  {
+    id: 'decision-dashboard',
+    name: '数据看板',
+    path: '/decision/dashboard',
+    icon: 'el-icon-data-analysis',
+    children: []
+  }
+];
+
+// 员工管理模块的独立菜单
+export const employeeMenus = [
+  {
+    id: 'employee-index',
+    name: '首页',
+    path: '/employee/index',
+    icon: 'el-icon-home',
+    children: []
+  },
+  {
+    id: 'employee-list',
+    name: '员工列表',
+    path: '/employee/list',
+    icon: 'el-icon-document-copy',
+    children: []
+  }
+];
+
+// 默认的全局静态菜单
+export const staticMenus = [
+  ...globalMenus,
   {
     id: 'decision',
     name: '议事决策',
     path: '/decision',
     icon: 'el-icon-document',
-    children: [
-      {
-        id: 'decision-index',
-        name: '议事决策',
-        path: '/decision/index',
-        icon: 'el-icon-home',
-        children: []
-      },
-      {
-        id: 'decision-topic',
-        name: '议题管理',
-        path: '/decision/topic',
-        icon: 'el-icon-document-copy',
-        children: []
-      },
-      {
-        id: 'decision-task',
-        name: '任务管理',
-        path: '/decision/task',
-        icon: 'el-icon-s-management',
-        children: []
-      },
-      {
-        id: 'decision-my-tasks',
-        name: '我的任务',
-        path: '/decision/task/my-tasks',
-        icon: 'el-icon-document-copy',
-        children: []
-      }
-    ]
+    children: decisionMenus
   },
   {
     id: 'employee',
     name: '员工管理',
     path: '/employee',
     icon: 'el-icon-user',
-    children: [
-      {
-        id: 'employee-index',
-        name: '首页',
-        path: '/employee/index',
-        icon: 'el-icon-home',
-        children: []
-      },
-      {
-        id: 'employee-list',
-        name: '员工列表',
-        path: '/employee/list',
-        icon: 'el-icon-document-copy',
-        children: []
-      }
-    ]
+    children: employeeMenus
   }
 ];
 
