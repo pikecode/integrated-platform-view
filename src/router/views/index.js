@@ -225,6 +225,16 @@ export default [
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
       },
       {
+        path: 'topic/my',
+        name: '我发布的',
+        meta: {
+          title: '我发布的',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/my-topics.vue'),
+      },
+      {
         path: 'topic/create',
         name: '新建议题',
         meta: {
