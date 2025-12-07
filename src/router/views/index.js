@@ -235,6 +235,16 @@ export default [
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/my-topics.vue'),
       },
       {
+        path: 'topic/schedule',
+        name: '议程安排',
+        meta: {
+          title: '议程安排',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/schedule.vue'),
+      },
+      {
         path: 'topic/create',
         name: '新建议题',
         meta: {
