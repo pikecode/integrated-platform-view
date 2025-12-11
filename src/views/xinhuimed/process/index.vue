@@ -557,6 +557,29 @@ const getDeptList = async () => {
 
 // 点击流程
 // 动态路由跳转
+const getExternalComponent = (formKey, type) => {
+    // 预定义的外部表单组件映射
+    const componentMap = {
+        'Leave': {
+            'start': () => import('../plugin/workflow/pages/external/Leave/start.vue'),
+            'detail': () => import('../plugin/workflow/pages/external/Leave/detail.vue'),
+        },
+        'template': {
+            'start': () => import('../plugin/workflow/pages/external/template/start.vue'),
+            'detail': () => import('../plugin/workflow/pages/external/template/detail.vue'),
+        },
+    };
+
+    const formName = formKey.substring(6);
+    if (componentMap[formName] && componentMap[formName][type]) {
+        return componentMap[formName][type];
+    }
+
+    // 如果找不到匹配的组件，返回null
+    console.warn(`找不到外部表单组件: ${formName}/${type}`);
+    return null;
+};
+
 const dynamicRoute = (row, type, async = false) => {
     const { id, taskId, processInstanceId, processId, formKey, formUrl, processDefKey } = row;
     if(!id) return
@@ -575,23 +598,28 @@ const dynamicRoute = (row, type, async = false) => {
                 router.push(formUrl + `?p=${param}`);
             } else {
                 // 动态添加路由
-                router.addRoute({
-                    path: `/workflow/process/external`,
-                    component: Layout,
-                    children: [
-                        {
-                            path: `${formKey.substring(6)}/${type}`,
-                            name:
-                                type == 'start'
-                                    ? `发起流程${formKey.substring(6)}`
-                                    : `流程详情${formKey.substring(6)}`,
-                            component: () => import(`../plugin/workflow/pages/external/${formKey.substring(6)}/${type}.vue`),
-                        },
-                    ],
-                });
-                router.push(
-                    `/workflow/process/external/${formKey.substring(6)}/${type}?p=${param}`
-                );
+                const component = getExternalComponent(formKey, type);
+                if (component) {
+                    router.addRoute({
+                        path: `/workflow/process/external`,
+                        component: Layout,
+                        children: [
+                            {
+                                path: `${formKey.substring(6)}/${type}`,
+                                name:
+                                    type == 'start'
+                                        ? `发起流程${formKey.substring(6)}`
+                                        : `流程详情${formKey.substring(6)}`,
+                                component: component,
+                            },
+                        ],
+                    });
+                    router.push(
+                        `/workflow/process/external/${formKey.substring(6)}/${type}?p=${param}`
+                    );
+                } else {
+                    console.error(`无法加载表单组件: ${formKey.substring(6)}/${type}`);
+                }
             }
         } else {
             if (async) {
