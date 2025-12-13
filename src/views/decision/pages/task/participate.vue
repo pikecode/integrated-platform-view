@@ -203,9 +203,10 @@ export default {
           id: 101,
           title: '汇报学生党支部资质资教学项',
           status: 'in_progress',
+          tabStatus: 'pending_feedback',
           currentNode: '/',
           content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
+          dueDate: '2025-08-08 12:12:12',
           countdown: '3天20小时',
           department: 'dept1',
           assignee: '张明明',
@@ -218,10 +219,11 @@ export default {
         {
           id: 102,
           title: '关于正式任命xxx为胸外科副主任',
-          status: 'completed',
+          status: 'pending',
+          tabStatus: 'pending_review',
           currentNode: '/',
           content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
+          dueDate: '2025-08-08 12:12:12',
           countdown: '/',
           department: 'dept2',
           assignee: '王五',
@@ -234,7 +236,8 @@ export default {
         {
           id: 103,
           title: '关于科研经费审批流程优化',
-          status: 'pending',
+          status: 'completed',
+          tabStatus: 'feedbacked',
           currentNode: 'node1',
           content: '需要完善科研经费审批流程.',
           dueDate: '2025-08-15 12:00',
@@ -250,7 +253,8 @@ export default {
         {
           id: 104,
           title: '教师招聘计划制定',
-          status: 'in_progress',
+          status: 'completed',
+          tabStatus: 'reviewed',
           currentNode: '/',
           content: '制定本年度教师招聘计划.',
           dueDate: '2025-08-20 12:00',
@@ -266,7 +270,8 @@ export default {
         {
           id: 105,
           title: '学科建设评估工作',
-          status: 'completed',
+          status: 'in_progress',
+          tabStatus: 'pending_feedback',
           currentNode: '/',
           content: '开展学科建设评估工作.',
           dueDate: '2025-08-12 12:00',
@@ -346,6 +351,19 @@ export default {
         filtered = filtered.filter(t =>
           (t.cooperatePerson || '').includes(this.searchParams.cooperatePerson)
         );
+      }
+
+      // 按Tab状态筛选
+      const tabStatusMap = {
+        pending_feedback: 'pending_feedback',    // 待反馈
+        pending_review: 'pending_review',        // 待审批
+        feedbacked: 'feedbacked',                // 已反馈
+        reviewed: 'reviewed'                     // 已审批
+      };
+
+      const currentTabStatus = tabStatusMap[this.activeTab];
+      if (currentTabStatus) {
+        filtered = filtered.filter(t => t.tabStatus === currentTabStatus);
       }
 
       // 分页
