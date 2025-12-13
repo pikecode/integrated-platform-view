@@ -114,7 +114,7 @@ export default {
       padding: 12px 0;
 
       ::v-deep .el-menu-item {
-        padding: 0 0 0 20px;
+        padding: 0 0 0 20px !important;
         height: 40px;
         line-height: 40px;
         color: #606266;
@@ -136,11 +136,12 @@ export default {
         i {
           margin-right: 8px;
           font-size: 16px;
+          width: 16px;
         }
       }
 
       ::v-deep .el-sub-menu__title {
-        padding: 0 0 0 20px;
+        padding: 0 0 0 20px !important;
         height: 40px;
         line-height: 40px;
         color: #606266;
@@ -155,6 +156,7 @@ export default {
         i {
           margin-right: 8px;
           font-size: 16px;
+          width: 16px;
         }
       }
 
