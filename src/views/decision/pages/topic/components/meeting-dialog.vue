@@ -1,8 +1,10 @@
 <template>
   <el-dialog
     title="申请上会"
-    v-model="visibleInternal"
+    :model-value="modelValue"
+    @update:model-value="(val) => $emit('update:modelValue', val)"
     width="1200px"
+    append-to-body
     class="meeting-dialog"
   >
     <!-- 主容器 -->
