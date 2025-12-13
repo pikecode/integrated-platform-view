@@ -200,7 +200,7 @@ export default {
   },
   computed: {
     breadcrumbs() {
-      return ['任务管理', '我发布的', '任务详情'];
+      return ['任务管理', '任务详情'];
     }
   },
   created() {

@@ -1,6 +1,6 @@
 <template>
   <basic-container>
-    <decision-breadcrumb :breadcrumbs="['议题决策', '议题管理', '议程安排']" />
+    <decision-breadcrumb :breadcrumbs="['议题管理', '议程安排']" />
 
     <!-- 页面标题和操作按钮 -->
     <div class="schedule-header">
