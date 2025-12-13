@@ -9,7 +9,6 @@
     <!-- 快速入口 -->
     <quick-entry
       @topic-create="handleTopicCreate"
-      @task-create="handleTaskCreate"
     />
 
     <!-- 待办事项：议题和任务 -->
@@ -232,10 +231,6 @@ export default {
 
     handleTopicCreate() {
       this.$router.push('/decision/topic/create');
-    },
-
-    handleTaskCreate() {
-      this.$router.push('/decision/task');
     },
 
     goToTopics() {
