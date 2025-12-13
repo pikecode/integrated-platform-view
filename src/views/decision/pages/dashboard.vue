@@ -106,9 +106,6 @@
             <h3>任务反馈率</h3>
             <div class="chart-wrapper">
               <div id="task-feedback-chart" class="chart-circle" />
-              <div class="feedback-hint">
-                <p>已反馈的任务/总任务 同一个任务，执行人和 配合人都反馈算这个任 务反馈</p>
-              </div>
             </div>
           </div>
         </div>
@@ -469,25 +466,6 @@ export default {
         .chart-circle {
           width: 100%;
           height: 300px;
-        }
-
-        .feedback-hint {
-          position: absolute;
-          bottom: 20px;
-          right: 20px;
-          background: #FCE4EC;
-          border-left: 3px solid #E91E63;
-          padding: 12px 15px;
-          border-radius: 4px;
-          width: 200px;
-          font-size: 12px;
-          color: #D81B60;
-          line-height: 1.6;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-          p {
-            margin: 0;
-          }
         }
       }
     }
