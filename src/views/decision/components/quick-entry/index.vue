@@ -9,6 +9,14 @@
         </div>
         <span>议题新增</span>
       </div>
+
+      <!-- 任务新增 -->
+      <div class="entry-item" @click="handleTaskCreate">
+        <div class="icon-wrapper">
+          <i class="el-icon-message"></i>
+        </div>
+        <span>任务新增</span>
+      </div>
     </div>
   </div>
 </template>
@@ -19,6 +27,9 @@ export default {
   methods: {
     handleTopicCreate() {
       this.$emit('topic-create');
+    },
+    handleTaskCreate() {
+      this.$emit('task-create');
     }
   }
 };
