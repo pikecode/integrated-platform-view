@@ -23,52 +23,41 @@
       </el-steps>
     </div>
 
-    <!-- 基础信息卡片 -->
+    <!-- 基础信息卡片 - 改进布局 -->
     <el-card class="detail-card">
       <template #header>
         <div class="card-title-container">
           <span class="card-title">议题基础信息</span>
+          <div class="card-actions">
+            <el-button type="primary" size="small" @click="handleApprove">审批</el-button>
+            <el-button size="small" @click="handleBack">返回</el-button>
+          </div>
         </div>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <div class="info-item">
-            <span class="label">议题名称</span>
-            <span class="value">{{ topicData.title }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <!-- 标题部分 -->
+      <div class="topic-title-section">
+        <div class="topic-title-main">
+          <h3>{{ topicData.title }}</h3>
+        </div>
+        <div class="topic-meta">
+          <span>申报科室：{{ topicData.department }}</span>
+          <span>科室主任：{{ topicData.deptDirector }}</span>
+          <span>分管领导：{{ topicData.leader }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">申报科室</span>
-            <span class="value">{{ topicData.department }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">科室主任</span>
-            <span class="value">{{ topicData.deptDirector }}</span>
-          </div>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">汇报人</span>
-            <span class="value">{{ topicData.reporter }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">科室分管领导号</span>
-            <span class="value">{{ topicData.leader }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <!-- 信息网格 -->
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">汇报人</span>
+          <span class="value">{{ topicData.reporter }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">科室分管领导</span>
+          <span class="value">{{ topicData.leader }}</span>
+        </div>
+      </div>
     </el-card>
 
     <!-- 议题内容 -->
@@ -77,41 +66,30 @@
         <span class="card-title">议题内容</span>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <div class="content-section">
-            <h4 class="section-title">议题内容摘要</h4>
-            <div class="content-text" v-html="topicData.summary"></div>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="content-section">
+        <h4 class="section-title">议题内容摘要</h4>
+        <div class="content-text" v-html="topicData.summary"></div>
+      </div>
 
-      <el-row :gutter="20" style="margin-top: 20px">
-        <el-col :span="24">
-          <div class="content-section">
-            <h4 class="section-title">会前讨论情况及建议解决方案</h4>
-            <div class="content-text">{{ topicData.discussion }}</div>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="content-section" style="margin-top: 20px">
+        <h4 class="section-title">会前讨论情况及建议解决方案</h4>
+        <div class="content-text">{{ topicData.discussion }}</div>
+      </div>
 
       <!-- 相关附件 -->
-      <el-row :gutter="20" style="margin-top: 20px" v-if="topicData.attachments && topicData.attachments.length > 0">
-        <el-col :span="24">
-          <div class="content-section">
-            <h4 class="section-title">相关附件</h4>
-            <el-table :data="topicData.attachments" size="small" style="width: 100%">
-              <el-table-column prop="name" label="文件名" width="200" />
-              <el-table-column prop="size" label="大小" width="100" />
-              <el-table-column label="操作" width="100">
-                <template #default="scope">
-                  <el-link type="primary" :href="scope.row.url" target="_blank">下载</el-link>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="content-section" style="margin-top: 20px" v-if="topicData.attachments && topicData.attachments.length > 0">
+        <h4 class="section-title">相关附件</h4>
+        <el-table :data="topicData.attachments" size="small" style="width: 100%">
+          <el-table-column prop="name" label="文件名" />
+          <el-table-column prop="size" label="大小" width="100" />
+          <el-table-column label="操作" width="100">
+            <template #default="scope">
+              <el-link type="primary" size="small">预览</el-link>
+              <el-link type="primary" size="small" style="margin-left: 8px;">下载</el-link>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
 
     <!-- 其他信息 -->
@@ -120,118 +98,91 @@
         <span class="card-title">其他信息</span>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">是否三重一大</span>
-            <span class="value">{{ topicData.isImportant }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">是否需要协同科室</span>
-            <span class="value">{{ topicData.needCollaboration }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">是否三重一大</span>
+          <span class="value">{{ topicData.isImportant }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">是否需要协同科室</span>
+          <span class="value">{{ topicData.needCollaboration }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20" v-if="topicData.needCollaboration === '是'">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">协同科室</span>
-            <span class="value">{{ topicData.collaborationDepts ? topicData.collaborationDepts.join('、') : '-' }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">协同科室负责人</span>
-            <span class="value">{{ topicData.collaborationLeaders }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid" v-if="topicData.needCollaboration === '是'">
+        <div class="info-item">
+          <span class="label">协同科室</span>
+          <span class="value">{{ topicData.collaborationDepts ? topicData.collaborationDepts.join('、') : '-' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">协同科室负责人</span>
+          <span class="value">{{ topicData.collaborationLeaders }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">是否存在相关风险</span>
-            <span class="value">{{ topicData.hasRisk }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">是否存在相关风险</span>
+          <span class="value">{{ topicData.hasRisk }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20" v-if="topicData.hasRisk === '是'">
-        <el-col :span="24">
-          <div class="info-item">
-            <span class="label">风险应对措施</span>
-            <span class="value">{{ topicData.riskMeasures }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid" v-if="topicData.hasRisk === '是'">
+        <div class="info-item" style="border: none">
+          <span class="label">风险应对措施</span>
+          <span class="value">{{ topicData.riskMeasures }}</span>
+        </div>
+      </div>
     </el-card>
 
-    <!-- 申请上会信息 -->
+    <!-- 申请上会信息 - 添加粉红色提示框 -->
     <el-card class="detail-card" v-if="currentStepIndex >= 1">
       <template #header>
         <span class="card-title">申请上会</span>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">申请人</span>
-            <span class="value">{{ topicData.applyUser }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">会议名称</span>
-            <span class="value">{{ topicData.meetingType }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <!-- 粉红色提示框 -->
+      <div class="hint-box">
+        <p>从申请申请的角度提供信息提示应用说明，审批与初期提交</p>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">会议类型</span>
-            <span class="value">{{ topicData.meetingCategory }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">期望汇报时间</span>
-            <span class="value">{{ topicData.expectedTime }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">申请人</span>
+          <span class="value">{{ topicData.applyUser }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">会议名称</span>
+          <span class="value">{{ topicData.meetingType }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">会议时间段</span>
-            <span class="value">{{ formatDateRange(topicData.meetingStartTime, topicData.meetingEndTime) }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">会议时长</span>
-            <span class="value">{{ topicData.meetingDuration }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">会议类型</span>
+          <span class="value">{{ topicData.meetingCategory }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">会议时间</span>
+          <span class="value">{{ formatDateRange(topicData.meetingStartTime, topicData.meetingEndTime) }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <div class="info-item">
-            <span class="label">参会人员</span>
-            <div class="participants">
-              <el-tag v-for="participant in topicData.participants" :key="participant">
-                {{ participant }}
-              </el-tag>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">会议时长</span>
+          <span class="value">{{ topicData.meetingDuration }}</span>
+        </div>
+      </div>
+
+      <div class="info-item" style="border: none">
+        <span class="label">参会人员</span>
+        <div class="participants">
+          <el-tag v-for="participant in topicData.participants" :key="participant" size="small">
+            {{ participant }}
+          </el-tag>
+        </div>
+      </div>
     </el-card>
 
     <!-- 议题上会 -->
@@ -240,16 +191,10 @@
         <span class="card-title">议题上会</span>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <div class="info-item">
-            <span class="label">会议内容</span>
-            <div class="content-text">
-              {{ topicData.meetingContent || '暂无内容' }}
-            </div>
-          </div>
-        </el-col>
-      </el-row>
+      <!-- 占位符区域 -->
+      <div class="placeholder-box">
+        <p>待批会议内容相关实际功能，展示使用合理安排，人员落实刘连、会议实际执行与战略方向协同有无，专业协助认证送交资料</p>
+      </div>
     </el-card>
 
     <!-- 结论录入 -->
@@ -258,38 +203,39 @@
         <span class="card-title">结论录入</span>
       </template>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">录入人员</span>
-            <span class="value">{{ topicData.conclusionUser }}</span>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div class="info-item">
-            <span class="label">录入时间</span>
-            <span class="value">{{ topicData.conclusionTime }}</span>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">录入人员</span>
+          <span class="value">{{ topicData.conclusionUser }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">录入时间</span>
+          <span class="value">{{ topicData.conclusionTime }}</span>
+        </div>
+      </div>
 
-      <el-row :gutter="20">
-        <el-col :span="24">
-          <div class="info-item">
-            <span class="label">会议结论</span>
-            <div class="content-text">
-              {{ topicData.conclusion || '暂无结论' }}
-            </div>
-          </div>
-        </el-col>
-      </el-row>
+      <div class="content-section" style="margin-top: 20px">
+        <h4 class="section-title">会议结论</h4>
+        <div class="content-text">
+          {{ topicData.conclusion || '暂无结论' }}
+        </div>
+      </div>
+
+      <!-- 相关附件 -->
+      <div class="content-section" style="margin-top: 20px" v-if="topicData.conclusionAttachments && topicData.conclusionAttachments.length > 0">
+        <h4 class="section-title">相关附件</h4>
+        <el-table :data="topicData.conclusionAttachments" size="small" style="width: 100%">
+          <el-table-column prop="name" label="文件名" />
+          <el-table-column prop="size" label="大小" width="100" />
+          <el-table-column label="操作" width="100">
+            <template #default="scope">
+              <el-link type="primary" size="small">预览</el-link>
+              <el-link type="primary" size="small" style="margin-left: 8px;">下载</el-link>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
     </el-card>
-
-    <!-- 操作按钮 -->
-    <div class="action-buttons">
-      <el-button @click="handleBack">返回</el-button>
-      <el-button type="primary" @click="handleEdit" v-if="canEdit">编辑</el-button>
-    </div>
   </basic-container>
 </template>
 
@@ -452,6 +398,10 @@ export default {
       this.$router.go(-1);
     },
 
+    handleApprove() {
+      this.$message.success('审批成功');
+    },
+
     handleEdit() {
       this.$router.push(`/decision/topic/edit/${this.topicId}`);
     }
@@ -479,6 +429,15 @@ export default {
     font-weight: 500;
     color: #303133;
   }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+
+    ::v-deep .el-button {
+      padding: 6px 16px;
+    }
+  }
 }
 
 .process-steps {
@@ -499,6 +458,67 @@ export default {
       color: #909399;
       font-size: 11px;
       margin-top: 4px;
+    }
+  }
+}
+
+/* 议题基础信息 */
+.topic-title-section {
+  margin-bottom: 20px;
+
+  .topic-title-main {
+    h3 {
+      margin: 0 0 12px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #303133;
+    }
+  }
+
+  .topic-meta {
+    display: flex;
+    gap: 24px;
+    font-size: 13px;
+    color: #606266;
+
+    span {
+      display: flex;
+      align-items: center;
+    }
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+  margin-bottom: 12px;
+
+  .info-item {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    border-right: 1px solid #f0f0f0;
+
+    &:nth-child(2n) {
+      border-right: none;
+    }
+
+    &:nth-child(n+3) {
+      border-bottom: none;
+    }
+
+    .label {
+      width: 120px;
+      flex-shrink: 0;
+      color: #606266;
+      font-weight: 500;
+    }
+
+    .value {
+      flex: 1;
+      color: #303133;
+      word-break: break-word;
     }
   }
 }
@@ -554,6 +574,42 @@ export default {
   }
 }
 
+/* 粉红色提示框 */
+.hint-box {
+  background: #fce4ec;
+  border-left: 4px solid #e91e63;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+
+  p {
+    margin: 0;
+    color: #d81b60;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+/* 占位符区域 */
+.placeholder-box {
+  background: #f5f5f5;
+  border: 2px dashed #dcdfe6;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+
+  p {
+    margin: 0;
+    color: #909399;
+    text-align: center;
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
 .action-buttons {
   display: flex;
   justify-content: center;
@@ -563,6 +619,22 @@ export default {
 
   .el-button {
     width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+
+    .info-item {
+      border-right: none !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+    }
+  }
+
+  .topic-meta {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 </style>
