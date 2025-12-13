@@ -338,7 +338,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/participate.vue'),
       },
       {
         path: 'dashboard',
