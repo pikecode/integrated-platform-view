@@ -585,7 +585,7 @@ const dynamicRoute = (row, type, async = false) => {
                                 type == 'start'
                                     ? `发起流程${formKey.substring(6)}`
                                     : `流程详情${formKey.substring(6)}`,
-                            component: () => import(`../plugin/workflow/pages/external/${formKey.substring(6)}/${type}.vue`),
+                            component: () => import(`../../plugin/workflow/pages/external/${formKey.substring(6)}/${type}.vue`),
                         },
                     ],
                 });

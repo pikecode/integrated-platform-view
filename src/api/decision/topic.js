@@ -219,3 +219,24 @@ export const archive = topicId => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 获取议题详情（表单使用）
+ */
+export const getTopicDetail = id => {
+  return getDetail(id);
+};
+
+/**
+ * 创建议题（表单使用）
+ */
+export const createTopic = data => {
+  return add(data);
+};
+
+/**
+ * 更新议题（表单使用）
+ */
+export const updateTopic = data => {
+  return update(data);
+};

@@ -256,7 +256,17 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
+      },
+      {
+        path: 'topic/edit/:id',
+        name: '编辑议题',
+        meta: {
+          title: '编辑议题',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
       },
       {
         path: 'topic/detail/:id',
@@ -266,7 +276,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/detail.vue'),
       },
       {
         path: 'topic/vote/:id',
