@@ -11,153 +11,137 @@
       <el-tab-pane label="已审批" name="reviewed" />
     </el-tabs>
 
-    <!-- 主容器：左侧搜索+表格 + 右侧提示框 -->
-    <div class="main-layout">
-      <!-- 左侧：搜索和表格 -->
-      <div class="left-section">
-        <!-- 搜索表单 -->
-        <div class="search-form-container">
-          <el-form :model="searchParams" label-width="80px" size="small">
-            <!-- 搜索条件 - 一行 -->
-            <el-row :gutter="20">
-              <el-col :span="4">
-                <el-form-item label="任务名称:">
-                  <el-input
-                    v-model="searchParams.title"
-                    placeholder="请输入"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
+    <!-- 搜索表单 -->
+    <div class="search-form-container">
+      <el-form :model="searchParams" label-width="80px" size="small">
+        <!-- 搜索条件 - 一行 -->
+        <el-row :gutter="20">
+          <el-col :span="4">
+            <el-form-item label="任务名称:">
+              <el-input
+                v-model="searchParams.title"
+                placeholder="请输入"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
 
-              <el-col :span="5">
-                <el-form-item label="执行科室:">
-                  <el-select
-                    v-model="searchParams.departments"
-                    placeholder="请选择执行科室"
-                    multiple
-                    collapse-tags
-                    clearable
-                  >
-                    <el-option label="胸外科" value="dept1" />
-                    <el-option label="心内科" value="dept2" />
-                    <el-option label="神经外科" value="dept3" />
-                  </el-select>
-                  <span v-if="searchParams.departments.length > 0" class="selected-count">
-                    已选：{{ searchParams.departments.length }}
-                  </span>
-                </el-form-item>
-              </el-col>
+          <el-col :span="5">
+            <el-form-item label="执行科室:">
+              <el-select
+                v-model="searchParams.departments"
+                placeholder="请选择执行科室"
+                multiple
+                collapse-tags
+                clearable
+              >
+                <el-option label="胸外科" value="dept1" />
+                <el-option label="心内科" value="dept2" />
+                <el-option label="神经外科" value="dept3" />
+              </el-select>
+              <span v-if="searchParams.departments.length > 0" class="selected-count">
+                已选：{{ searchParams.departments.length }}
+              </span>
+            </el-form-item>
+          </el-col>
 
-              <el-col :span="4">
-                <el-form-item label="执行人:">
-                  <el-input
-                    v-model="searchParams.executor"
-                    placeholder="请输入"
-                    clearable
-                  />
-                </el-form-item>
-              </el-col>
+          <el-col :span="4">
+            <el-form-item label="执行人:">
+              <el-input
+                v-model="searchParams.executor"
+                placeholder="请输入"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
 
-              <el-col :span="5">
-                <el-form-item label="任务来源:">
-                  <el-select
-                    v-model="searchParams.source"
-                    placeholder="请选择任务来源"
-                    clearable
-                  >
-                    <el-option label="系统生成" value="system" />
-                    <el-option label="手动创建" value="manual" />
-                    <el-option label="导入" value="import" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
+          <el-col :span="5">
+            <el-form-item label="任务来源:">
+              <el-select
+                v-model="searchParams.source"
+                placeholder="请选择任务来源"
+                clearable
+              >
+                <el-option label="系统生成" value="system" />
+                <el-option label="手动创建" value="manual" />
+                <el-option label="导入" value="import" />
+              </el-select>
+            </el-form-item>
+          </el-col>
 
-              <el-col :span="6">
-                <!-- 操作按钮区 -->
-                <div class="search-actions">
-                  <div class="action-buttons">
-                    <el-button type="primary" @click="handleSearch">查询</el-button>
-                    <el-button @click="handleSearchReset">重置</el-button>
-                  </div>
-                  <div class="view-buttons">
-                    <el-button
-                      type="text"
-                      size="small"
-                      @click="showMoreSearch = !showMoreSearch"
-                    >
-                      {{ showMoreSearch ? '收起' : '更多查询条件>' }}
-                    </el-button>
-                  </div>
-                </div>
-              </el-col>
-            </el-row>
+          <el-col :span="6">
+            <!-- 操作按钮区 -->
+            <div class="search-actions">
+              <div class="action-buttons">
+                <el-button type="primary" @click="handleSearch">查询</el-button>
+                <el-button @click="handleSearchReset">重置</el-button>
+              </div>
+              <div class="view-buttons">
+                <el-button
+                  type="text"
+                  size="small"
+                  @click="showMoreSearch = !showMoreSearch"
+                >
+                  {{ showMoreSearch ? '收起' : '更多查询条件>' }}
+                </el-button>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
 
-            <!-- 高级搜索选项 -->
-            <el-row v-if="showMoreSearch" :gutter="20" style="margin-top: 12px;">
-              <el-col :span="4">
-                <el-form-item label="创建时间:">
-                  <el-date-picker
-                    v-model="searchParams.createTimeRange"
-                    type="daterange"
-                    range-separator="-"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="YYYY-MM-DD"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
-        </div>
-
-        <!-- avue-crud 表格 -->
-        <avue-crud
-          ref="crud"
-          :option="taskOption"
-          :data="data"
-          v-model="form"
-          v-model:page="page"
-          :table-loading="loading"
-          @on-load="onLoad"
-        >
-          <!-- 任务名称列 -->
-          <template #title="{ row }">
-            <el-link
-              type="primary"
-              @click="handleViewDetail(row.id)"
-            >
-              {{ row.title }}
-            </el-link>
-          </template>
-
-          <!-- 任务状态列 -->
-          <template #status="{ row }">
-            <status-badge :status="row.status" type="task" />
-          </template>
-
-          <!-- 操作列 - 只显示查看详情和打印 -->
-          <template #menu="{ row }">
-            <el-button type="text" size="small" @click="handlePrint(row)">
-              打印
-            </el-button>
-            <el-button type="text" size="small" @click="handleViewDetail(row.id)">
-              查看详情
-            </el-button>
-          </template>
-        </avue-crud>
-      </div>
-
-      <!-- 右侧：提示框 -->
-      <div class="right-section">
-        <div class="hint-box">
-          <div class="hint-title">任务的接收反馈必须在<br />详情中进行</div>
-          <div class="hint-content">
-            <p>任务完成倒计时小于<br />24小时 红色显示</p>
-          </div>
-        </div>
-      </div>
+        <!-- 高级搜索选项 -->
+        <el-row v-if="showMoreSearch" :gutter="20" style="margin-top: 12px;">
+          <el-col :span="4">
+            <el-form-item label="创建时间:">
+              <el-date-picker
+                v-model="searchParams.createTimeRange"
+                type="daterange"
+                range-separator="-"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
     </div>
+
+    <!-- avue-crud 表格 -->
+    <avue-crud
+      ref="crud"
+      :option="taskOption"
+      :data="data"
+      v-model="form"
+      v-model:page="page"
+      :table-loading="loading"
+      @on-load="onLoad"
+    >
+      <!-- 任务名称列 -->
+      <template #title="{ row }">
+        <el-link
+          type="primary"
+          @click="handleViewDetail(row.id)"
+        >
+          {{ row.title }}
+        </el-link>
+      </template>
+
+      <!-- 任务状态列 -->
+      <template #status="{ row }">
+        <status-badge :status="row.status" type="task" />
+      </template>
+
+      <!-- 操作列 - 只显示查看详情和打印 -->
+      <template #menu="{ row }">
+        <el-button type="text" size="small" @click="handlePrint(row)">
+          打印
+        </el-button>
+        <el-button type="text" size="small" @click="handleViewDetail(row.id)">
+          查看详情
+        </el-button>
+      </template>
+    </avue-crud>
   </basic-container>
 </template>
 
@@ -420,45 +404,6 @@ export default {
   }
 }
 
-.main-layout {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 20px;
-
-  .left-section {
-    flex: 1;
-  }
-
-  .right-section {
-    .hint-box {
-      background: #fce4ec;
-      border-left: 3px solid #e91e63;
-      padding: 16px;
-      border-radius: 2px;
-      position: sticky;
-      top: 20px;
-
-      .hint-title {
-        color: #d81b60;
-        font-weight: 500;
-        font-size: 13px;
-        line-height: 1.5;
-        margin-bottom: 12px;
-      }
-
-      .hint-content {
-        color: #d81b60;
-        font-size: 12px;
-        line-height: 1.5;
-
-        p {
-          margin: 0;
-        }
-      }
-    }
-  }
-}
-
 .search-form-container {
   background: #f9fafb;
   border: 1px solid #e8eaed;
@@ -490,18 +435,6 @@ export default {
     margin-left: 8px;
     font-size: 12px;
     color: #909399;
-  }
-}
-
-@media (max-width: 1200px) {
-  .main-layout {
-    grid-template-columns: 1fr;
-
-    .right-section {
-      .hint-box {
-        position: static;
-      }
-    }
   }
 }
 </style>
