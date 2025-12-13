@@ -1,7 +1,7 @@
 <template>
   <el-dialog
-    :title="'申请上会'"
-    :visible.sync="visibleInternal"
+    title="申请上会"
+    v-model="visibleInternal"
     width="1200px"
     class="meeting-dialog"
   >
@@ -119,18 +119,22 @@
     </div>
 
     <!-- 底部操作按钮 -->
-    <span slot="footer" class="dialog-footer">
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleSubmit">申请上会</el-button>
-    </span>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSubmit">申请上会</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script>
-export default {
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'MeetingDialog',
   props: {
-    visible: {
+    modelValue: {
       type: Boolean,
       default: false
     },
@@ -139,9 +143,9 @@ export default {
       default: () => ({})
     }
   },
+  emits: ['update:modelValue'],
   data() {
     return {
-      visibleInternal: false,
       formData: {
         meetingType: '',
         meetingName: '',
@@ -233,19 +237,15 @@ export default {
     };
   },
   watch: {
-    visible(val) {
-      this.visibleInternal = val;
+    modelValue(val) {
       if (val) {
         this.initForm();
         this.loadTopics();
       }
     },
-    visibleInternal(val) {
-      this.$emit('update:visible', val);
-    },
     meetingData: {
       handler(newVal) {
-        if (newVal && this.visibleInternal) {
+        if (newVal && this.modelValue) {
           this.initForm();
         }
       },
@@ -316,7 +316,7 @@ export default {
     },
 
     handleClose(val) {
-      this.visibleInternal = false;
+      this.$emit('update:modelValue', false);
     },
 
     handleSubmit() {
@@ -344,10 +344,10 @@ export default {
 
       // Submit
       this.$message.success('申请上会成功');
-      this.visibleInternal = false;
+      this.$emit('update:modelValue', false);
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

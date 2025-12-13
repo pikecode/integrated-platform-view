@@ -164,7 +164,7 @@
 
     <!-- 修改会议信息弹窗 -->
     <meeting-dialog
-      :visible.sync="meetingDialogVisible"
+      v-model="meetingDialogVisible"
       :meeting-data="selectedSchedule"
     />
   </basic-container>
