@@ -370,6 +370,7 @@ export default {
     },
 
     handleEditMeeting(row) {
+      this.selectedSchedule = row;
       this.meetingDialogVisible = true;
     },
 

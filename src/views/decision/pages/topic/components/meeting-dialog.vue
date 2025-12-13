@@ -242,11 +242,19 @@ export default {
     },
     visibleInternal(val) {
       this.$emit('update:visible', val);
+    },
+    meetingData: {
+      handler(newVal) {
+        if (newVal && this.visibleInternal) {
+          this.initForm();
+        }
+      },
+      deep: true
     }
   },
   methods: {
     initForm() {
-      if (this.meetingData && this.meetingData.id) {
+      if (this.meetingData && this.meetingData.meetingName) {
         this.formData = {
           meetingType: this.meetingData.meetingType || '',
           meetingName: this.meetingData.meetingName || '',
