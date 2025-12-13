@@ -66,10 +66,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-
-          <el-col :span="6" style="text-align: right;">
-            <el-button type="primary" @click="handleSearch">查询</el-button>
-          </el-col>
         </el-row>
 
         <!-- 第二行搜索条件 -->
@@ -108,12 +104,12 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="5">
-            <!-- Empty col for spacing -->
-          </el-col>
-
-          <el-col :span="6" style="text-align: right;">
-            <!-- Buttons on right -->
+          <el-col :span="5" style="text-align: right;">
+            <!-- 查询和重置按钮 -->
+            <div class="search-buttons">
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="handleSearchReset">重置</el-button>
+            </div>
           </el-col>
         </el-row>
 
@@ -133,12 +129,13 @@
           </el-col>
         </el-row>
 
-        <!-- 控制按钮 -->
-        <el-row style="text-align: right; margin-top: -10px;">
-          <el-button @click="handleSearchReset">重置</el-button>
-          <el-button type="text" @click="showMoreSearch = !showMoreSearch">
-            {{ showMoreSearch ? '收起' : '更多查询条件>' }}
-          </el-button>
+        <!-- 更多查询条件链接 -->
+        <el-row style="margin-top: -5px;">
+          <el-col :span="24">
+            <el-button type="text" @click="showMoreSearch = !showMoreSearch">
+              {{ showMoreSearch ? '收起' : '更多查询条件>' }}
+            </el-button>
+          </el-col>
         </el-row>
       </el-form>
     </div>
@@ -469,20 +466,14 @@ export default {
   padding: 16px;
   margin-bottom: 20px;
 
-  .search-actions {
+  .search-buttons {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 12px;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 4px;
 
-    .left-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    .view-buttons {
-      display: flex;
-      gap: 8px;
+    .el-button {
+      min-width: 70px;
     }
   }
 
