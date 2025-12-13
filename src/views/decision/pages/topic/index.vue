@@ -1,7 +1,15 @@
 <template>
   <div class="topic-management-page">
     <!-- 面包屑导航 -->
-    <decision-breadcrumb :breadcrumbs="['议题管理', '待我审批']" />
+    <decision-breadcrumb :breadcrumbs="['议题管理', activeTab === 'pending' ? '待我审批' : '已审批']" />
+
+    <!-- 标签页 -->
+    <div class="tabs-container">
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+        <el-tab-pane label="待审批" name="pending"></el-tab-pane>
+        <el-tab-pane label="已审批" name="approved"></el-tab-pane>
+      </el-tabs>
+    </div>
 
     <!-- 自定义搜索表单 -->
     <div class="search-form-container">
@@ -19,20 +27,27 @@
             </el-form-item>
           </el-col>
           <el-col :span="6">
-            <el-form-item label="议题状态">
+            <el-form-item label="审批类型">
               <el-select
-                v-model="searchParams.status"
-                placeholder="请选择议题状态"
+                v-model="searchParams.approvalType"
+                placeholder="请选择审批类型（单选）"
                 clearable
               >
-                <el-option label="议题申请中" value="draft" />
-                <el-option label="待上会" value="pending_vote" />
-                <el-option label="上会申请中" value="applying" />
-                <el-option label="已申请上会" value="approved" />
-                <el-option label="结论审批中" value="voting" />
-                <el-option label="结论录入完成" value="completed" />
-                <el-option label="已撤回" value="withdrawn" />
+                <el-option label="类型1" value="type1" />
+                <el-option label="类型2" value="type2" />
               </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="议题申请时间">
+              <el-date-picker
+                v-model="searchParams.createdAt"
+                type="daterange"
+                range-separator="-"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                clearable
+              />
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -55,54 +70,20 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item label="申报时间">
-              <el-date-picker
-                v-model="searchParams.createdAt"
-                type="daterange"
-                range-separator="-"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
         </el-row>
 
         <!-- 展开更多条件 -->
         <el-row :gutter="20" v-if="showMoreSearch">
           <el-col :span="6">
-            <el-form-item label="议题当前阶段">
+            <el-form-item label="当前审批节点">
               <el-select
-                v-model="searchParams.stage"
+                v-model="searchParams.approvalNode"
                 placeholder="全部"
                 clearable
               >
-                <el-option label="阶段1" value="stage1" />
-                <el-option label="阶段2" value="stage2" />
-                <el-option label="阶段3" value="stage3" />
+                <el-option label="节点1" value="node1" />
+                <el-option label="节点2" value="node2" />
               </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="申请上会状态">
-              <el-select
-                v-model="searchParams.applyStatus"
-                placeholder="全部"
-                clearable
-              >
-                <el-option label="待审批" value="pending" />
-                <el-option label="已导出" value="exported" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="科室主任">
-              <el-input
-                v-model="searchParams.deptDirector"
-                placeholder="请输入申报科室主任"
-                clearable
-              />
             </el-form-item>
           </el-col>
         </el-row>
@@ -112,10 +93,10 @@
           <el-col :span="24">
             <div class="search-actions">
               <el-button type="primary" @click="handleSearch" size="small">
-                <i class="el-icon-search"></i> 搜索
+                查询
               </el-button>
               <el-button @click="handleSearchReset" size="small">
-                <i class="el-icon-refresh"></i> 重置
+                重置
               </el-button>
               <el-button
                 link
@@ -123,9 +104,19 @@
                 @click="showMoreSearch = !showMoreSearch"
                 size="small"
               >
-                {{ showMoreSearch ? '收起' : '查看更多' }}
+                {{ showMoreSearch ? '收起' : '更多查询条件' }}
                 <i :class="showMoreSearch ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
               </el-button>
+              <div class="view-buttons">
+                <el-button-group>
+                  <el-button @click="viewMode = 'list'" :type="viewMode === 'list' ? 'primary' : 'default'" size="small">
+                    <i class="el-icon-menu"></i>
+                  </el-button>
+                  <el-button @click="viewMode = 'grid'" :type="viewMode === 'grid' ? 'primary' : 'default'" size="small">
+                    <i class="el-icon-grid"></i>
+                  </el-button>
+                </el-button-group>
+              </div>
             </div>
           </el-col>
         </el-row>
@@ -186,41 +177,17 @@
         <el-button
           type="text"
           size="small"
+          @click="handleApprove(row)"
+          v-if="activeTab === 'pending'"
+        >
+          审批
+        </el-button>
+        <el-button
+          type="text"
+          size="small"
           @click="handleViewDetail(row.id)"
         >
           查看详情
-        </el-button>
-        <el-button
-          v-if="canEdit(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('edit', row)"
-        >
-          编辑
-        </el-button>
-        <el-button
-          v-if="canWithdraw(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('withdraw', row)"
-        >
-          撤回
-        </el-button>
-        <el-button
-          v-if="canApply(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('apply', row)"
-        >
-          申请上会
-        </el-button>
-        <el-button
-          v-if="canVote(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('vote', row)"
-        >
-          投票
         </el-button>
       </template>
     </avue-crud>
@@ -242,15 +209,16 @@ export default {
   },
   data() {
     return {
+      // 标签页和视图模式
+      activeTab: 'pending',
+      viewMode: 'list',
       // 搜索条件状态
       searchParams: {
         title: '',
-        status: '',
+        approvalType: '',
         department: '',
         createdAt: null,
-        stage: '',
-        applyStatus: '',
-        deptDirector: ''
+        approvalNode: ''
       },
       showMoreSearch: false,
       // 表格状态
@@ -267,31 +235,31 @@ export default {
       mockTopics: [
         {
           id: '1',
-          title: '新增胸外科手术规范',
+          title: '汇报学生党支部资质资教学项',
           status: 'draft',
           stage: 'stage1',
           applyStatus: 'pending',
-          startTime: '2024-12-01 10:00:00',
-          endTime: '2024-12-15 18:00:00',
+          approvalType: 'type1',
+          approvalNode: 'node1',
           department: '胸外科',
-          deptDirector: '张三',
+          deptDirector: '张明',
           leader: '张三',
           creator: 'admin',
-          createdAt: '2024-12-01 10:30:00'
+          createdAt: '2025-08-08 12:12:12'
         },
         {
           id: '2',
-          title: '优化心内科治疗流程',
+          title: '关于正式任命xxx为胸外科副主任',
           status: 'pending_vote',
           stage: 'stage2',
-          applyStatus: 'exported',
-          startTime: '2024-11-28 09:00:00',
-          endTime: '2024-12-10 17:00:00',
-          department: '心内科',
-          deptDirector: '李四',
+          applyStatus: 'pending',
+          approvalType: 'type1',
+          approvalNode: 'node1',
+          department: '胸外科',
+          deptDirector: '张明',
           leader: '李四',
           creator: 'admin',
-          createdAt: '2024-11-28 14:15:00'
+          createdAt: '2025-08-08 12:12:12'
         },
         {
           id: '3',
@@ -299,8 +267,8 @@ export default {
           status: 'approved',
           stage: 'stage2',
           applyStatus: 'exported',
-          startTime: '2024-11-25 08:00:00',
-          endTime: '2024-12-08 16:00:00',
+          approvalType: 'type2',
+          approvalNode: 'node2',
           department: '放射科',
           deptDirector: '王五',
           leader: '王五',
@@ -313,8 +281,8 @@ export default {
           status: 'voting',
           stage: 'stage3',
           applyStatus: 'exported',
-          startTime: '2024-11-20 10:00:00',
-          endTime: '2024-12-05 15:00:00',
+          approvalType: 'type1',
+          approvalNode: 'node1',
           department: '重症监护室',
           deptDirector: '赵六',
           leader: '赵六',
@@ -327,8 +295,8 @@ export default {
           status: 'completed',
           stage: 'stage3',
           applyStatus: 'exported',
-          startTime: '2024-11-15 09:00:00',
-          endTime: '2024-11-30 17:00:00',
+          approvalType: 'type2',
+          approvalNode: 'node2',
           department: '门诊',
           deptDirector: '孙七',
           leader: '孙七',
@@ -341,8 +309,8 @@ export default {
           status: 'applying',
           stage: 'stage1',
           applyStatus: 'pending',
-          startTime: '2024-11-10 10:00:00',
-          endTime: '2024-11-25 18:00:00',
+          approvalType: 'type1',
+          approvalNode: 'node1',
           department: '护理部',
           deptDirector: '周八',
           leader: '周八',
@@ -355,8 +323,8 @@ export default {
           status: 'withdrawn',
           stage: 'stage1',
           applyStatus: 'pending',
-          startTime: '2024-11-05 09:00:00',
-          endTime: '2024-11-20 16:00:00',
+          approvalType: 'type2',
+          approvalNode: 'node1',
           department: '感控部',
           deptDirector: '吴九',
           leader: '吴九',
@@ -369,8 +337,8 @@ export default {
           status: 'draft',
           stage: 'stage1',
           applyStatus: 'pending',
-          startTime: '2024-10-30 10:00:00',
-          endTime: '2024-11-15 17:00:00',
+          approvalType: 'type1',
+          approvalNode: 'node1',
           department: '医保科',
           deptDirector: '郑十',
           leader: '郑十',
@@ -383,8 +351,8 @@ export default {
           status: 'pending_vote',
           stage: 'stage2',
           applyStatus: 'exported',
-          startTime: '2024-10-25 09:00:00',
-          endTime: '2024-11-10 16:00:00',
+          approvalType: 'type2',
+          approvalNode: 'node2',
           department: '急诊科',
           deptDirector: '张三',
           leader: '张三',
@@ -397,8 +365,8 @@ export default {
           status: 'approved',
           stage: 'stage2',
           applyStatus: 'exported',
-          startTime: '2024-10-20 08:00:00',
-          endTime: '2024-11-05 17:00:00',
+          approvalType: 'type1',
+          approvalNode: 'node2',
           department: '质管科',
           deptDirector: '李四',
           leader: '李四',
@@ -429,56 +397,34 @@ export default {
         try {
           let filtered = [...this.mockTopics];
 
+          // 按标签页筛选
+          if (this.activeTab === 'pending') {
+            filtered = filtered.filter(topic => topic.applyStatus === 'pending');
+          } else {
+            filtered = filtered.filter(topic => topic.applyStatus === 'exported');
+          }
+
           if (params.title) {
             filtered = filtered.filter(topic =>
               topic.title.includes(params.title)
             );
           }
 
-          if (params.status) {
+          if (params.approvalType) {
             filtered = filtered.filter(topic =>
-              topic.status === params.status
+              topic.approvalType === params.approvalType
             );
           }
 
-          if (params.stage) {
+          if (params.approvalNode) {
             filtered = filtered.filter(topic =>
-              topic.stage === params.stage
-            );
-          }
-
-          if (params.applyStatus) {
-            filtered = filtered.filter(topic =>
-              topic.applyStatus === params.applyStatus
+              topic.approvalNode === params.approvalNode
             );
           }
 
           if (params.deptDirector) {
             filtered = filtered.filter(topic =>
               topic.deptDirector.includes(params.deptDirector)
-            );
-          }
-
-          if (params.startTime) {
-            filtered = filtered.filter(topic => {
-              const topicStart = new Date(topic.startTime);
-              const paramStart = new Date(params.startTime);
-              return topicStart >= paramStart;
-            });
-          }
-
-          if (params.endTime) {
-            filtered = filtered.filter(topic => {
-              const topicEnd = new Date(topic.endTime);
-              const paramEnd = new Date(params.endTime);
-              paramEnd.setHours(23, 59, 59, 999);
-              return topicEnd <= paramEnd;
-            });
-          }
-
-          if (params.department) {
-            filtered = filtered.filter(topic =>
-              topic.department === params.department
             );
           }
 
@@ -493,6 +439,12 @@ export default {
             });
           }
 
+          if (params.department) {
+            filtered = filtered.filter(topic =>
+              topic.department === params.department
+            );
+          }
+
           this.page.total = filtered.length;
 
           const start = (page.currentPage - 1) * page.pageSize;
@@ -505,6 +457,16 @@ export default {
           this.$refs.crud?.toggleSelection();
         }
       }, 500);
+    },
+
+    handleTabChange() {
+      this.page.currentPage = 1;
+      this.onLoad(this.page, this.searchParams);
+    },
+
+    handleApprove(row) {
+      this.$message.success('审批成功');
+      this.onLoad(this.page, this.searchParams);
     },
 
     searchChange(params, done) {
@@ -673,12 +635,10 @@ export default {
     handleSearchReset() {
       this.searchParams = {
         title: '',
-        status: '',
+        approvalType: '',
         department: '',
         createdAt: null,
-        stage: '',
-        applyStatus: '',
-        deptDirector: ''
+        approvalNode: ''
       };
       this.page.currentPage = 1;
       this.onLoad(this.page, {});
@@ -692,6 +652,22 @@ export default {
   background: white;
   border-radius: 6px;
   padding: 24px;
+
+  .tabs-container {
+    margin-bottom: 20px;
+
+    ::v-deep .el-tabs {
+      &__header {
+        margin-bottom: 16px;
+      }
+
+      &__nav-wrap {
+        ::after {
+          display: none;
+        }
+      }
+    }
+  }
 
   .search-form-container {
     background: #f9fafb;
@@ -726,8 +702,21 @@ export default {
 
   .search-actions {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
+    justify-content: space-between;
+
+    .view-buttons {
+      margin-left: auto;
+
+      ::v-deep .el-button-group {
+        display: flex;
+      }
+
+      ::v-deep .el-button {
+        padding: 6px 12px;
+      }
+    }
 
     ::v-deep .el-button {
       &.is-plain {
