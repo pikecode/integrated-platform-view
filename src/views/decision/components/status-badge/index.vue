@@ -37,11 +37,13 @@ export default {
         voting: '投票中',
         ended: '已结束',
         archived: '已存档',
-        pending: '待处理',
+        pending: '待审批',
         assigned: '已分配',
         in_progress: '进行中',
         completed: '已完成',
-        overdue: '逾期'
+        overdue: '逾期',
+        withdrawn: '已撤回',
+        rejected: '已拒绝'
       };
       return labelMap[this.status] || '未知';
     },
@@ -71,7 +73,9 @@ export default {
         assigned: 'primary',
         in_progress: 'warning',
         completed: 'success',
-        overdue: 'danger'
+        overdue: 'danger',
+        withdrawn: 'info',
+        rejected: 'danger'
       };
       return typeMap[this.status] || 'info';
     }
