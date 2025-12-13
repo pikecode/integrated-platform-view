@@ -5,9 +5,10 @@
 
     <!-- 搜索表单 -->
     <div class="search-form-container">
-      <el-form :model="searchParams" label-width="100px" size="small">
+      <el-form :model="searchParams" label-width="80px" size="small">
+        <!-- 第一行搜索条件 -->
         <el-row :gutter="20">
-          <el-col :span="6">
+          <el-col :span="4">
             <el-form-item label="任务名称:">
               <el-input
                 v-model="searchParams.title"
@@ -17,7 +18,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
+          <el-col :span="5">
             <el-form-item label="执行科室:">
               <el-select
                 v-model="searchParams.departments"
@@ -36,7 +37,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
+          <el-col :span="4">
             <el-form-item label="任务状态:">
               <el-select
                 v-model="searchParams.status"
@@ -52,7 +53,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
+          <el-col :span="5">
             <el-form-item label="任务来源:">
               <el-select
                 v-model="searchParams.source"
@@ -65,11 +66,60 @@
               </el-select>
             </el-form-item>
           </el-col>
+
+          <el-col :span="6" style="text-align: right;">
+            <el-button type="primary" @click="handleSearch">查询</el-button>
+          </el-col>
+        </el-row>
+
+        <!-- 第二行搜索条件 -->
+        <el-row :gutter="20">
+          <el-col :span="4">
+            <el-form-item label="执行人:">
+              <el-input
+                v-model="searchParams.executor"
+                placeholder="请输入"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="5">
+            <el-form-item label="配合科室:">
+              <el-select
+                v-model="searchParams.cooperateDept"
+                placeholder="请选择执行科室"
+                clearable
+              >
+                <el-option label="胸外科" value="dept1" />
+                <el-option label="心内科" value="dept2" />
+                <el-option label="神经外科" value="dept3" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="4">
+            <el-form-item label="配合人:">
+              <el-input
+                v-model="searchParams.cooperatePerson"
+                placeholder="请输入"
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="5">
+            <!-- Empty col for spacing -->
+          </el-col>
+
+          <el-col :span="6" style="text-align: right;">
+            <!-- Buttons on right -->
+          </el-col>
         </el-row>
 
         <!-- 高级搜索选项 -->
         <el-row v-if="showMoreSearch" :gutter="20">
-          <el-col :span="6">
+          <el-col :span="4">
             <el-form-item label="创建时间:">
               <el-date-picker
                 v-model="searchParams.createTimeRange"
@@ -83,36 +133,12 @@
           </el-col>
         </el-row>
 
-        <!-- 操作按钮 -->
-        <el-row>
-          <div class="search-actions">
-            <div class="left-buttons">
-              <el-button type="primary" @click="handleSearch">查询</el-button>
-              <el-button @click="handleSearchReset">重置</el-button>
-              <el-button type="text" @click="showMoreSearch = !showMoreSearch">
-                {{ showMoreSearch ? '收起' : '更多查询条件>' }}
-              </el-button>
-            </div>
-
-            <div class="view-buttons">
-              <el-button-group>
-                <el-button
-                  @click="viewMode = 'list'"
-                  :type="viewMode === 'list' ? 'primary' : 'default'"
-                  size="small"
-                >
-                  <i class="el-icon-menu"></i>
-                </el-button>
-                <el-button
-                  @click="viewMode = 'grid'"
-                  :type="viewMode === 'grid' ? 'primary' : 'default'"
-                  size="small"
-                >
-                  <i class="el-icon-s-grid"></i>
-                </el-button>
-              </el-button-group>
-            </div>
-          </div>
+        <!-- 控制按钮 -->
+        <el-row style="text-align: right; margin-top: -10px;">
+          <el-button @click="handleSearchReset">重置</el-button>
+          <el-button type="text" @click="showMoreSearch = !showMoreSearch">
+            {{ showMoreSearch ? '收起' : '更多查询条件>' }}
+          </el-button>
         </el-row>
       </el-form>
     </div>
@@ -213,6 +239,9 @@ export default {
         departments: [],
         status: '',
         source: '',
+        executor: '',
+        cooperateDept: '',
+        cooperatePerson: '',
         createTimeRange: null
       },
       mockTasks: [
@@ -226,6 +255,8 @@ export default {
           countdown: '3天20小时',
           department: 'dept1',
           assignee: '张明明',
+          cooperateDept: 'dept2',
+          cooperatePerson: '李五',
           createdAt: '2025-08-01 10:00',
           creatorName: '李四',
           source: 'system'
@@ -240,6 +271,8 @@ export default {
           countdown: '/',
           department: 'dept1',
           assignee: '张三',
+          cooperateDept: 'dept3',
+          cooperatePerson: '王六',
           createdAt: '2025-08-01 10:00',
           creatorName: '李四',
           source: 'manual'
@@ -254,6 +287,8 @@ export default {
           countdown: '/',
           department: 'dept2',
           assignee: '王五',
+          cooperateDept: 'dept1',
+          cooperatePerson: '张三',
           createdAt: '2025-08-01 10:00',
           creatorName: '李四',
           source: 'system'
@@ -268,6 +303,8 @@ export default {
           countdown: '3天20小时',
           department: 'dept1',
           assignee: '张三',
+          cooperateDept: 'dept2',
+          cooperatePerson: '赵七',
           createdAt: '2025-08-01 10:00',
           creatorName: '李四',
           source: 'import'
@@ -282,6 +319,8 @@ export default {
           countdown: '/',
           department: 'dept3',
           assignee: '赵六',
+          cooperateDept: 'dept1',
+          cooperatePerson: '李二',
           createdAt: '2025-08-01 10:00',
           creatorName: '李四',
           source: 'system'
@@ -328,6 +367,27 @@ export default {
         filtered = filtered.filter(t => t.source === this.searchParams.source);
       }
 
+      // 按执行人筛选
+      if (this.searchParams.executor) {
+        filtered = filtered.filter(t =>
+          (t.assignee || '').includes(this.searchParams.executor)
+        );
+      }
+
+      // 按配合科室筛选
+      if (this.searchParams.cooperateDept) {
+        filtered = filtered.filter(t =>
+          (t.cooperateDept || '') === this.searchParams.cooperateDept
+        );
+      }
+
+      // 按配合人筛选
+      if (this.searchParams.cooperatePerson) {
+        filtered = filtered.filter(t =>
+          (t.cooperatePerson || '').includes(this.searchParams.cooperatePerson)
+        );
+      }
+
       // 分页
       this.page.total = filtered.length;
       const startIndex = (page.currentPage - 1) * page.pageSize;
@@ -347,6 +407,9 @@ export default {
         departments: [],
         status: '',
         source: '',
+        executor: '',
+        cooperateDept: '',
+        cooperatePerson: '',
         createTimeRange: null
       };
       this.handleSearch();
