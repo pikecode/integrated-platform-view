@@ -349,7 +349,7 @@ export default [
           isAuth: false,
           menu: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/dashboard.vue'),
       },
         ]
       }
