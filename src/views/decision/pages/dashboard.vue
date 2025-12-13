@@ -5,7 +5,6 @@
 
     <!-- 时间段筛选 -->
     <div class="time-filter">
-      <span class="filter-label">议事决策 / 数据看板</span>
       <div class="filter-tabs">
         <el-button
           v-for="tab in timeTabs"
@@ -359,15 +358,9 @@ export default {
 <style scoped lang="scss">
 .time-filter {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   margin-bottom: 30px;
-
-  .filter-label {
-    font-size: 16px;
-    font-weight: 500;
-    color: #303133;
-  }
 
   .filter-tabs {
     display: flex;
