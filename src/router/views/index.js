@@ -317,7 +317,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/detail.vue'),
       },
       {
         path: 'task/my-tasks',
