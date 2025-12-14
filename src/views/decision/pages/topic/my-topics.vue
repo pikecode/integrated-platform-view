@@ -4,8 +4,15 @@
     <decision-breadcrumb :breadcrumbs="['议题管理', '我发布的']" />
 
     <!-- Tab 切换 -->
-    <el-tabs v-model="activeTab" class="meeting-tabs">
-      <el-tab-pane label="院长办公室" name="office">
+    <el-tabs v-model="activeTab" class="meeting-tabs" @tab-click="handleTabChange">
+      <el-tab-pane
+        v-for="meetingType in meetingTypeList"
+        :key="meetingType.code"
+        :label="meetingType.value"
+        :name="meetingType.code"
+      >
+        <!-- 院长办公室 (code: 10) 内容 -->
+        <template v-if="meetingType.code === '10'">
         <!-- 自定义搜索表单 -->
         <div class="search-form-container">
           <el-form :model="searchParams" label-width="100px" size="small">
@@ -28,13 +35,12 @@
                     placeholder="请选择议题状态"
                     clearable
                   >
-                    <el-option label="议题申请中" value="draft" />
-                    <el-option label="待上会" value="pending_vote" />
-                    <el-option label="上会申请中" value="applying" />
-                    <el-option label="已申请上会" value="approved" />
-                    <el-option label="结论审批中" value="voting" />
-                    <el-option label="结论录入完成" value="completed" />
-                    <el-option label="已撤回" value="withdrawn" />
+                    <el-option
+                      v-for="item in topicStatusList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -45,21 +51,17 @@
                     placeholder="请选择申报科室"
                     clearable
                   >
-                    <el-option label="胸外科" value="胸外科" />
-                    <el-option label="心内科" value="心内科" />
-                    <el-option label="放射科" value="放射科" />
-                    <el-option label="重症监护室" value="重症监护室" />
-                    <el-option label="门诊" value="门诊" />
-                    <el-option label="护理部" value="护理部" />
-                    <el-option label="感控部" value="感控部" />
-                    <el-option label="医保科" value="医保科" />
-                    <el-option label="急诊科" value="急诊科" />
-                    <el-option label="质管科" value="质管科" />
+                    <el-option
+                      v-for="item in deptList"
+                      :key="item.id"
+                      :label="item.deptName"
+                      :value="item.id"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="申报时间">
+                <el-form-item label="议题申请时间">
                   <el-date-picker
                     v-model="searchParams.createdAt"
                     type="daterange"
@@ -73,7 +75,7 @@
             </el-row>
 
             <!-- 展开更多条件 -->
-            <el-row :gutter="20" v-if="showMoreSearch">
+            <el-row :gutter="20" v-if="showMoreSearch" class="more-search-row">
               <el-col :span="6">
                 <el-form-item label="议题当前阶段">
                   <el-select
@@ -81,9 +83,12 @@
                     placeholder="全部"
                     clearable
                   >
-                    <el-option label="阶段1" value="stage1" />
-                    <el-option label="阶段2" value="stage2" />
-                    <el-option label="阶段3" value="stage3" />
+                    <el-option
+                      v-for="item in topicStageList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -94,18 +99,45 @@
                     placeholder="全部"
                     clearable
                   >
-                    <el-option label="待审批" value="pending" />
-                    <el-option label="已导出" value="exported" />
+                    <el-option
+                      v-for="item in applyStatusList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="科室主任">
-                  <el-input
+                <el-form-item label="申报科室科主任">
+                  <el-select
                     v-model="searchParams.deptDirector"
-                    placeholder="请输入申报科室主任"
+                    placeholder="请选择申报科室科主任"
                     clearable
-                  />
+                  >
+                    <el-option
+                      v-for="item in deptDirectorList"
+                      :key="item.id"
+                      :label="item.realName"
+                      :value="item.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="申报科室分管领导">
+                  <el-select
+                    v-model="searchParams.deptLeader"
+                    placeholder="请选择申报科室分管领导"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in deptLeaderList"
+                      :key="item.id"
+                      :label="item.realName"
+                      :value="item.id"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -113,20 +145,15 @@
             <!-- 搜索和重置按钮 -->
             <el-row :gutter="20">
               <el-col :span="24">
-                <div class="search-actions">
-                  <el-button type="primary" @click="handleSearch" size="small">
-                    <i class="el-icon-search"></i> 搜索
-                  </el-button>
-                  <el-button @click="handleSearchReset" size="small">
-                    <i class="el-icon-refresh"></i> 重置
-                  </el-button>
+                <div class="search-buttons-row">
+                  <el-button type="primary" @click="handleSearch">查询</el-button>
+                  <el-button @click="handleSearchReset">重置</el-button>
                   <el-button
-                    link
-                    type="primary"
+                    type="text"
                     @click="showMoreSearch = !showMoreSearch"
-                    size="small"
+                    class="more-btn"
                   >
-                    {{ showMoreSearch ? '收起' : '查看更多' }}
+                    {{ showMoreSearch ? '收起' : '更多' }}
                     <i :class="showMoreSearch ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
                   </el-button>
                 </div>
@@ -173,15 +200,15 @@
       </template>
 
       <!-- 议题名称插槽 - 链接 -->
-      <template #title="{ row }">
+      <template #topicName="{ row }">
         <el-link type="primary" @click="handleViewDetail(row.id)">
-          {{ row.title }}
+          {{ row.topicName }}
         </el-link>
       </template>
 
       <!-- 状态徽章插槽 -->
-      <template #status="{ row }">
-        <status-badge :status="row.status" type="topic" />
+      <template #topicStatusDesc="{ row }">
+        <status-badge :status="row.topicStatus" type="topic" />
       </template>
 
       <!-- 操作列插槽 - 自定义权限按钮 -->
@@ -221,15 +248,24 @@
           v-if="canVote(row)"
           type="text"
           size="small"
-          @click="handleCommand('vote', row)"
+          @click="handleCommand('conclusion', row)"
         >
-          投票
+          录入结论
+        </el-button>
+        <el-button
+          v-if="row.canPrint"
+          type="text"
+          size="small"
+          @click="handleCommand('print', row)"
+        >
+          打印
         </el-button>
       </template>
         </avue-crud>
-      </el-tab-pane>
+        </template>
 
-      <el-tab-pane label="党委会" name="committee">
+        <!-- 党委会 (code: 20) 内容 -->
+        <template v-if="meetingType.code === '20'">
         <!-- 自定义搜索表单 -->
         <div class="search-form-container">
           <el-form :model="searchParamsCommittee" label-width="100px" size="small">
@@ -252,13 +288,12 @@
                     placeholder="请选择议题状态"
                     clearable
                   >
-                    <el-option label="议题申请中" value="draft" />
-                    <el-option label="待上会" value="pending_vote" />
-                    <el-option label="上会申请中" value="applying" />
-                    <el-option label="已申请上会" value="approved" />
-                    <el-option label="结论审批中" value="voting" />
-                    <el-option label="结论录入完成" value="completed" />
-                    <el-option label="已撤回" value="withdrawn" />
+                    <el-option
+                      v-for="item in topicStatusList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -269,21 +304,17 @@
                     placeholder="请选择申报科室"
                     clearable
                   >
-                    <el-option label="胸外科" value="胸外科" />
-                    <el-option label="心内科" value="心内科" />
-                    <el-option label="放射科" value="放射科" />
-                    <el-option label="重症监护室" value="重症监护室" />
-                    <el-option label="门诊" value="门诊" />
-                    <el-option label="护理部" value="护理部" />
-                    <el-option label="感控部" value="感控部" />
-                    <el-option label="医保科" value="医保科" />
-                    <el-option label="急诊科" value="急诊科" />
-                    <el-option label="质管科" value="质管科" />
+                    <el-option
+                      v-for="item in deptList"
+                      :key="item.id"
+                      :label="item.deptName"
+                      :value="item.id"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="申报时间">
+                <el-form-item label="议题申请时间">
                   <el-date-picker
                     v-model="searchParamsCommittee.createdAt"
                     type="daterange"
@@ -297,7 +328,7 @@
             </el-row>
 
             <!-- 展开更多条件 -->
-            <el-row :gutter="20" v-if="showMoreSearchCommittee">
+            <el-row :gutter="20" v-if="showMoreSearchCommittee" class="more-search-row">
               <el-col :span="6">
                 <el-form-item label="议题当前阶段">
                   <el-select
@@ -305,9 +336,12 @@
                     placeholder="全部"
                     clearable
                   >
-                    <el-option label="阶段1" value="stage1" />
-                    <el-option label="阶段2" value="stage2" />
-                    <el-option label="阶段3" value="stage3" />
+                    <el-option
+                      v-for="item in topicStageList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -318,18 +352,45 @@
                     placeholder="全部"
                     clearable
                   >
-                    <el-option label="待审批" value="pending" />
-                    <el-option label="已导出" value="exported" />
+                    <el-option
+                      v-for="item in applyStatusList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label="科室主任">
-                  <el-input
+                <el-form-item label="申报科室科主任">
+                  <el-select
                     v-model="searchParamsCommittee.deptDirector"
-                    placeholder="请输入申报科室主任"
+                    placeholder="请选择申报科室科主任"
                     clearable
-                  />
+                  >
+                    <el-option
+                      v-for="item in deptDirectorList"
+                      :key="item.id"
+                      :label="item.realName"
+                      :value="item.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="申报科室分管领导">
+                  <el-select
+                    v-model="searchParamsCommittee.deptLeader"
+                    placeholder="请选择申报科室分管领导"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in deptLeaderList"
+                      :key="item.id"
+                      :label="item.realName"
+                      :value="item.id"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -337,20 +398,15 @@
             <!-- 搜索和重置按钮 -->
             <el-row :gutter="20">
               <el-col :span="24">
-                <div class="search-actions">
-                  <el-button type="primary" @click="handleSearchCommittee" size="small">
-                    <i class="el-icon-search"></i> 搜索
-                  </el-button>
-                  <el-button @click="handleSearchResetCommittee" size="small">
-                    <i class="el-icon-refresh"></i> 重置
-                  </el-button>
+                <div class="search-buttons-row">
+                  <el-button type="primary" @click="handleSearchCommittee">查询</el-button>
+                  <el-button @click="handleSearchResetCommittee">重置</el-button>
                   <el-button
-                    link
-                    type="primary"
+                    type="text"
                     @click="showMoreSearchCommittee = !showMoreSearchCommittee"
-                    size="small"
+                    class="more-btn"
                   >
-                    {{ showMoreSearchCommittee ? '收起' : '查看更多' }}
+                    {{ showMoreSearchCommittee ? '收起' : '更多' }}
                     <i :class="showMoreSearchCommittee ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
                   </el-button>
                 </div>
@@ -397,15 +453,15 @@
           </template>
 
           <!-- 议题名称插槽 - 链接 -->
-          <template #title="{ row }">
+          <template #topicName="{ row }">
             <el-link type="primary" @click="handleViewDetail(row.id)">
-              {{ row.title }}
+              {{ row.topicName }}
             </el-link>
           </template>
 
           <!-- 状态徽章插槽 -->
-          <template #status="{ row }">
-            <status-badge :status="row.status" type="topic" />
+          <template #topicStatusDesc="{ row }">
+            <status-badge :status="row.topicStatus" type="topic" />
           </template>
 
           <!-- 操作列插槽 - 自定义权限按钮 -->
@@ -445,12 +501,21 @@
               v-if="canVote(row)"
               type="text"
               size="small"
-              @click="handleCommand('vote', row)"
+              @click="handleCommand('conclusion', row)"
             >
-              投票
+              录入结论
+            </el-button>
+            <el-button
+              v-if="row.canPrint"
+              type="text"
+              size="small"
+              @click="handleCommand('print', row)"
+            >
+              打印
             </el-button>
           </template>
         </avue-crud>
+        </template>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -471,7 +536,21 @@ export default {
   },
   data() {
     return {
-      activeTab: 'office',
+      // 会议类型列表（动态）
+      meetingTypeList: [],
+      activeTab: '',
+      // 议题状态列表
+      topicStatusList: [],
+      // 科室列表
+      deptList: [],
+      // 议题当前阶段列表
+      topicStageList: [],
+      // 申请上会状态列表
+      applyStatusList: [],
+      // 科室科主任列表
+      deptDirectorList: [],
+      // 科室分管领导列表
+      deptLeaderList: [],
       // 搜索条件状态
       searchParams: {
         title: '',
@@ -480,7 +559,8 @@ export default {
         createdAt: null,
         stage: '',
         applyStatus: '',
-        deptDirector: ''
+        deptDirector: '',
+        deptLeader: ''
       },
       searchParamsCommittee: {
         title: '',
@@ -489,7 +569,8 @@ export default {
         createdAt: null,
         stage: '',
         applyStatus: '',
-        deptDirector: ''
+        deptDirector: '',
+        deptLeader: ''
       },
       showMoreSearch: false,
       showMoreSearchCommittee: false,
@@ -670,93 +751,224 @@ export default {
       return opt;
     }
   },
+  watch: {
+    // 监听院长办公室申报科室变化
+    'searchParams.department'(newVal) {
+      if (newVal) {
+        this.fetchDeptUsers(newVal, 'office');
+      } else {
+        this.deptDirectorList = [];
+        this.deptLeaderList = [];
+        this.searchParams.deptDirector = '';
+        this.searchParams.deptLeader = '';
+      }
+    },
+    // 监听党委会申报科室变化
+    'searchParamsCommittee.department'(newVal) {
+      if (newVal) {
+        this.fetchDeptUsers(newVal, 'committee');
+      } else {
+        this.searchParamsCommittee.deptDirector = '';
+        this.searchParamsCommittee.deptLeader = '';
+      }
+    }
+  },
   mounted() {
-    this.onLoad(this.page);
-    this.onLoadCommittee(this.pageCommittee);
+    this.fetchMeetingTypes();
+    this.fetchTopicStatus();
+    this.fetchDeptList();
+    this.fetchTopicStage();
+    this.fetchApplyStatus();
   },
   methods: {
-    onLoad(page, params = {}) {
-      this.loading = true;
-      setTimeout(() => {
-        try {
-          let filtered = [...this.mockTopics];
+    // 处理Tab切换
+    handleTabChange(tab) {
+      // 根据当前激活的tab加载相应的数据
+      if (this.activeTab === '10') {
+        this.onLoad(this.page);
+      } else if (this.activeTab === '20') {
+        this.onLoadCommittee(this.pageCommittee);
+      }
+    },
 
-          if (params.title) {
-            filtered = filtered.filter(topic =>
-              topic.title.includes(params.title)
-            );
+    // 获取会议类型列表
+    async fetchMeetingTypes() {
+      try {
+        const res = await topicApi.getAgendaType();
+        if (res.data && res.data.code === 200) {
+          this.meetingTypeList = res.data.data || [];
+          // 设置第一个tab为默认激活
+          if (this.meetingTypeList.length > 0) {
+            this.activeTab = this.meetingTypeList[0].code;
           }
-
-          if (params.status) {
-            filtered = filtered.filter(topic =>
-              topic.status === params.status
-            );
-          }
-
-          if (params.stage) {
-            filtered = filtered.filter(topic =>
-              topic.stage === params.stage
-            );
-          }
-
-          if (params.applyStatus) {
-            filtered = filtered.filter(topic =>
-              topic.applyStatus === params.applyStatus
-            );
-          }
-
-          if (params.deptDirector) {
-            filtered = filtered.filter(topic =>
-              topic.deptDirector.includes(params.deptDirector)
-            );
-          }
-
-          if (params.startTime) {
-            filtered = filtered.filter(topic => {
-              const topicStart = new Date(topic.startTime);
-              const paramStart = new Date(params.startTime);
-              return topicStart >= paramStart;
-            });
-          }
-
-          if (params.endTime) {
-            filtered = filtered.filter(topic => {
-              const topicEnd = new Date(topic.endTime);
-              const paramEnd = new Date(params.endTime);
-              paramEnd.setHours(23, 59, 59, 999);
-              return topicEnd <= paramEnd;
-            });
-          }
-
-          if (params.department) {
-            filtered = filtered.filter(topic =>
-              topic.department === params.department
-            );
-          }
-
-          if (params.createdAt && params.createdAt.length === 2) {
-            const [startDate, endDate] = params.createdAt;
-            filtered = filtered.filter(topic => {
-              const topicDate = new Date(topic.createdAt);
-              const start = new Date(startDate);
-              const end = new Date(endDate);
-              end.setHours(23, 59, 59, 999);
-              return topicDate >= start && topicDate <= end;
-            });
-          }
-
-          this.page.total = filtered.length;
-
-          const start = (page.currentPage - 1) * page.pageSize;
-          const end = start + page.pageSize;
-          this.data = filtered.slice(start, end);
-        } catch (error) {
-          this.$message.error('加载议题失败');
-        } finally {
-          this.loading = false;
-          this.$refs.crud?.toggleSelection();
+          // 等会议类型加载完成后再加载当前激活tab的数据
+          this.$nextTick(() => {
+            if (this.activeTab === '10') {
+              this.onLoad(this.page);
+            } else if (this.activeTab === '20') {
+              this.onLoadCommittee(this.pageCommittee);
+            }
+          });
         }
-      }, 500);
+      } catch (error) {
+        console.error('获取会议类型失败：', error);
+        // 如果获取失败，使用默认配置
+        this.meetingTypeList = [
+          { code: '10', value: '院长办公室' },
+          { code: '20', value: '党委会' }
+        ];
+        this.activeTab = '10';
+        this.$nextTick(() => {
+          this.onLoad(this.page);
+        });
+      }
+    },
+
+    // 获取议题状态列表
+    async fetchTopicStatus() {
+      try {
+        const res = await topicApi.getTopicStatus();
+        if (res.data && res.data.code === 200) {
+          this.topicStatusList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取议题状态失败：', error);
+      }
+    },
+
+    // 获取科室列表
+    async fetchDeptList() {
+      try {
+        // 从 userInfo 获取 tenantId，如果没有则使用默认值
+        const tenantId = this.userInfo?.tenantId || '000000';
+        const res = await topicApi.getDeptList(tenantId);
+        if (res.data && res.data.code === 200) {
+          this.deptList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取科室列表失败：', error);
+      }
+    },
+
+    // 获取议题当前阶段列表
+    async fetchTopicStage() {
+      try {
+        const res = await topicApi.getTopicStage();
+        if (res.data && res.data.code === 200) {
+          this.topicStageList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取议题当前阶段失败：', error);
+      }
+    },
+
+    // 获取申请上会状态列表
+    async fetchApplyStatus() {
+      try {
+        const res = await topicApi.getApplyStatus();
+        if (res.data && res.data.code === 200) {
+          this.applyStatusList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取申请上会状态失败：', error);
+      }
+    },
+
+    // 获取科室人员（科主任和分管领导）
+    async fetchDeptUsers(deptId, type) {
+      try {
+        const res = await topicApi.getDeptUsers(deptId);
+        if (res.data && res.data.code === 200) {
+          const data = res.data.data;
+          // 设置科主任列表
+          this.deptDirectorList = data.directorList || [];
+          // 设置分管领导列表（将单个对象转为数组）
+          this.deptLeaderList = data.leader ? [data.leader] : [];
+
+          // 清空之前选择的值
+          if (type === 'office') {
+            this.searchParams.deptDirector = '';
+            this.searchParams.deptLeader = '';
+          } else if (type === 'committee') {
+            this.searchParamsCommittee.deptDirector = '';
+            this.searchParamsCommittee.deptLeader = '';
+          }
+        }
+      } catch (error) {
+        console.error('获取科室人员失败：', error);
+      }
+    },
+
+    async onLoad(page, params = {}) {
+      this.loading = true;
+      try {
+        // 只在院长办公室(code: 10)时加载
+        if (this.activeTab !== '10') {
+          this.loading = false;
+          return;
+        }
+
+        // 构建API请求参数
+        const requestData = {
+          current: page.currentPage,
+          size: page.pageSize,
+          meetingType: 10  // 院长办公室
+        };
+
+        // 添加搜索条件（使用 this.searchParams）
+        if (this.searchParams.title) {
+          requestData.topicName = this.searchParams.title;
+        }
+
+        if (this.searchParams.status) {
+          requestData.topicStatusList = [this.searchParams.status];
+        }
+
+        if (this.searchParams.department) {
+          requestData.applyDeptId = this.searchParams.department;
+        }
+
+        if (this.searchParams.createdAt && this.searchParams.createdAt.length === 2) {
+          requestData.applyTimeStart = this.$dayjs(this.searchParams.createdAt[0]).format('YYYY-MM-DD');
+          requestData.applyTimeEnd = this.$dayjs(this.searchParams.createdAt[1]).format('YYYY-MM-DD');
+        }
+
+        if (this.searchParams.stage) {
+          requestData.currentStageList = [this.searchParams.stage];
+        }
+
+        if (this.searchParams.applyStatus) {
+          requestData.applyMeetingStatus = this.searchParams.applyStatus;
+        }
+
+        if (this.searchParams.deptDirector) {
+          requestData.deptDirectorId = this.searchParams.deptDirector;
+        }
+
+        if (this.searchParams.deptLeader) {
+          requestData.deptLeaderId = this.searchParams.deptLeader;
+        }
+
+        // 调用API
+        const res = await topicApi.getMyTopicPage(requestData);
+
+        if (res.data && res.data.code === 200) {
+          this.data = res.data.data.records || [];
+          this.page.total = res.data.data.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载议题失败');
+          this.data = [];
+          this.page.total = 0;
+        }
+      } catch (error) {
+        console.error('加载议题失败：', error);
+        this.$message.error('加载议题失败');
+        this.data = [];
+        this.page.total = 0;
+      } finally {
+        this.loading = false;
+        this.$refs.crud?.toggleSelection();
+      }
     },
 
     searchChange(params, done) {
@@ -897,108 +1109,96 @@ export default {
     },
 
     canEdit(row) {
-      return row.status === 'draft' || row.creator === this.userInfo.name;
+      return row.canEdit === true;
     },
 
     canApply(row) {
-      return row.status === 'draft' || row.status === 'pending_vote';
+      return row.canApplyMeeting === true;
     },
 
     canVote(row) {
-      return row.status === 'voting';
+      return row.canInputConclusion === true;
     },
 
     canWithdraw(row) {
-      return ['draft', 'pending_vote', 'applying'].includes(row.status);
+      return row.canWithdraw === true;
     },
 
     canDelete(row) {
-      return row.status === 'draft' || row.creator === this.userInfo.name;
+      return row.canEdit === true;
     },
 
     // ==================== 党委会会议相关方法 ====================
-    onLoadCommittee(page, params = {}) {
+    async onLoadCommittee(page, params = {}) {
       this.loadingCommittee = true;
-      setTimeout(() => {
-        try {
-          let filtered = [...this.mockTopics];
-
-          if (params.title) {
-            filtered = filtered.filter(topic =>
-              topic.title.includes(params.title)
-            );
-          }
-
-          if (params.status) {
-            filtered = filtered.filter(topic =>
-              topic.status === params.status
-            );
-          }
-
-          if (params.stage) {
-            filtered = filtered.filter(topic =>
-              topic.stage === params.stage
-            );
-          }
-
-          if (params.applyStatus) {
-            filtered = filtered.filter(topic =>
-              topic.applyStatus === params.applyStatus
-            );
-          }
-
-          if (params.deptDirector) {
-            filtered = filtered.filter(topic =>
-              topic.deptDirector.includes(params.deptDirector)
-            );
-          }
-
-          if (params.startTime) {
-            filtered = filtered.filter(topic => {
-              const topicStart = new Date(topic.startTime);
-              const paramStart = new Date(params.startTime);
-              return topicStart >= paramStart;
-            });
-          }
-
-          if (params.endTime) {
-            filtered = filtered.filter(topic => {
-              const topicEnd = new Date(topic.endTime);
-              const paramEnd = new Date(params.endTime);
-              paramEnd.setHours(23, 59, 59, 999);
-              return topicEnd <= paramEnd;
-            });
-          }
-
-          if (params.department) {
-            filtered = filtered.filter(topic =>
-              topic.department === params.department
-            );
-          }
-
-          if (params.createdAt && params.createdAt.length === 2) {
-            const [startDate, endDate] = params.createdAt;
-            filtered = filtered.filter(topic => {
-              const topicDate = new Date(topic.createdAt);
-              const start = new Date(startDate);
-              const end = new Date(endDate);
-              end.setHours(23, 59, 59, 999);
-              return topicDate >= start && topicDate <= end;
-            });
-          }
-
-          this.pageCommittee.total = filtered.length;
-
-          const start = (page.currentPage - 1) * page.pageSize;
-          const end = start + page.pageSize;
-          this.dataCommittee = filtered.slice(start, end);
-        } catch (error) {
-          this.$message.error('加载议题失败');
-        } finally {
+      try {
+        // 只在党委会(code: 20)时加载
+        if (this.activeTab !== '20') {
           this.loadingCommittee = false;
-          this.$refs.crudCommittee?.toggleSelection();
+          return;
         }
-      }, 500);
+
+        // 构建API请求参数
+        const requestData = {
+          current: page.currentPage,
+          size: page.pageSize,
+          meetingType: 20  // 党委会
+        };
+
+        // 添加搜索条件（使用 this.searchParamsCommittee）
+        if (this.searchParamsCommittee.title) {
+          requestData.topicName = this.searchParamsCommittee.title;
+        }
+
+        if (this.searchParamsCommittee.status) {
+          requestData.topicStatusList = [this.searchParamsCommittee.status];
+        }
+
+        if (this.searchParamsCommittee.department) {
+          requestData.applyDeptId = this.searchParamsCommittee.department;
+        }
+
+        if (this.searchParamsCommittee.createdAt && this.searchParamsCommittee.createdAt.length === 2) {
+          requestData.applyTimeStart = this.$dayjs(this.searchParamsCommittee.createdAt[0]).format('YYYY-MM-DD');
+          requestData.applyTimeEnd = this.$dayjs(this.searchParamsCommittee.createdAt[1]).format('YYYY-MM-DD');
+        }
+
+        if (this.searchParamsCommittee.stage) {
+          requestData.currentStageList = [this.searchParamsCommittee.stage];
+        }
+
+        if (this.searchParamsCommittee.applyStatus) {
+          requestData.applyMeetingStatus = this.searchParamsCommittee.applyStatus;
+        }
+
+        if (this.searchParamsCommittee.deptDirector) {
+          requestData.deptDirectorId = this.searchParamsCommittee.deptDirector;
+        }
+
+        if (this.searchParamsCommittee.deptLeader) {
+          requestData.deptLeaderId = this.searchParamsCommittee.deptLeader;
+        }
+
+        // 调用API
+        const res = await topicApi.getMyTopicPage(requestData);
+
+        if (res.data && res.data.code === 200) {
+          this.dataCommittee = res.data.data.records || [];
+          this.pageCommittee.total = res.data.data.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载议题失败');
+          this.dataCommittee = [];
+          this.pageCommittee.total = 0;
+        }
+      } catch (error) {
+        console.error('加载议题失败：', error);
+        this.$message.error('加载议题失败');
+        this.dataCommittee = [];
+        this.pageCommittee.total = 0;
+      } finally {
+        this.loadingCommittee = false;
+        this.$refs.crudCommittee?.toggleSelection();
+      }
     },
 
     searchChangeCommittee(params, done) {
@@ -1079,7 +1279,8 @@ export default {
         createdAt: null,
         stage: '',
         applyStatus: '',
-        deptDirector: ''
+        deptDirector: '',
+        deptLeader: ''
       };
       this.page.currentPage = 1;
       this.onLoad(this.page, {});
@@ -1098,7 +1299,8 @@ export default {
         createdAt: null,
         stage: '',
         applyStatus: '',
-        deptDirector: ''
+        deptDirector: '',
+        deptLeader: ''
       };
       this.pageCommittee.currentPage = 1;
       this.onLoadCommittee(this.pageCommittee, {});
@@ -1115,20 +1317,21 @@ export default {
 
   .search-form-container {
     background: #f9fafb;
-    border: 1px solid #e8eaed;
     border-radius: 4px;
     padding: 16px;
     margin-bottom: 20px;
 
     ::v-deep .el-form {
       margin: 0;
-    }
 
-    ::v-deep .el-form-item {
-      margin-bottom: 16px;
+      .el-form-item {
+        margin-bottom: 8px;
+      }
 
-      &:last-child {
-        margin-bottom: 0;
+      .el-row:last-child {
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
 
@@ -1144,29 +1347,34 @@ export default {
     }
   }
 
-  .search-actions {
+  .search-buttons-row {
     display: flex;
     gap: 8px;
     align-items: center;
+    justify-content: flex-end;
+    padding-top: 4px;
 
-    ::v-deep .el-button {
-      &.is-plain {
-        background: white;
-        border-color: #ddd;
-        color: #606266;
-
-        &:hover {
-          background: #f5f5f5;
-          border-color: #999;
-        }
-      }
-
-      &.is-link {
-        padding: 0;
-        height: auto;
-        line-height: 1;
+    .el-button {
+      &:not(.more-btn) {
+        min-width: 70px;
       }
     }
+
+    .more-btn {
+      margin-left: 4px;
+      padding: 8px 4px;
+
+      i {
+        margin-left: 2px;
+        font-size: 12px;
+      }
+    }
+  }
+
+  .more-search-row {
+    padding-top: 4px;
+    margin-top: 4px;
+    animation: slideDown 0.3s ease-out;
   }
 
   ::v-deep .avue-crud {
@@ -1232,6 +1440,17 @@ export default {
     ::v-deep .el-tabs__content {
       padding: 20px 0;
     }
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

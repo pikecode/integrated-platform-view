@@ -73,8 +73,8 @@
         </el-row>
 
         <!-- 展开更多条件 -->
-        <el-row :gutter="20" v-if="showMoreSearch">
-          <el-col :span="6">
+        <el-row :gutter="20" v-if="showMoreSearch" class="more-search-row">
+          <el-col :span="8">
             <el-form-item label="当前审批节点">
               <el-select
                 v-model="searchParams.approvalNode"
@@ -91,32 +91,17 @@
         <!-- 搜索和重置按钮 -->
         <el-row :gutter="20">
           <el-col :span="24">
-            <div class="search-actions">
-              <el-button type="primary" @click="handleSearch" size="small">
-                查询
-              </el-button>
-              <el-button @click="handleSearchReset" size="small">
-                重置
-              </el-button>
+            <div class="search-buttons-row">
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="handleSearchReset">重置</el-button>
               <el-button
-                link
-                type="primary"
+                type="text"
                 @click="showMoreSearch = !showMoreSearch"
-                size="small"
+                class="more-btn"
               >
-                {{ showMoreSearch ? '收起' : '更多查询条件' }}
+                {{ showMoreSearch ? '收起' : '更多' }}
                 <i :class="showMoreSearch ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
               </el-button>
-              <div class="view-buttons">
-                <el-button-group>
-                  <el-button @click="viewMode = 'list'" :type="viewMode === 'list' ? 'primary' : 'default'" size="small">
-                    <i class="el-icon-menu"></i>
-                  </el-button>
-                  <el-button @click="viewMode = 'grid'" :type="viewMode === 'grid' ? 'primary' : 'default'" size="small">
-                    <i class="el-icon-grid"></i>
-                  </el-button>
-                </el-button-group>
-              </div>
             </div>
           </el-col>
         </el-row>
@@ -671,20 +656,21 @@ export default {
 
   .search-form-container {
     background: #f9fafb;
-    border: 1px solid #e8eaed;
     border-radius: 4px;
     padding: 16px;
     margin-bottom: 20px;
 
     ::v-deep .el-form {
       margin: 0;
-    }
 
-    ::v-deep .el-form-item {
-      margin-bottom: 16px;
+      .el-form-item {
+        margin-bottom: 8px;
+      }
 
-      &:last-child {
-        margin-bottom: 0;
+      .el-row:last-child {
+        .el-form-item {
+          margin-bottom: 0;
+        }
       }
     }
 
@@ -700,42 +686,34 @@ export default {
     }
   }
 
-  .search-actions {
+  .search-buttons-row {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
+    padding-top: 4px;
 
-    .view-buttons {
-      margin-left: auto;
-
-      ::v-deep .el-button-group {
-        display: flex;
-      }
-
-      ::v-deep .el-button {
-        padding: 6px 12px;
+    .el-button {
+      &:not(.more-btn) {
+        min-width: 70px;
       }
     }
 
-    ::v-deep .el-button {
-      &.is-plain {
-        background: white;
-        border-color: #ddd;
-        color: #606266;
+    .more-btn {
+      margin-left: 4px;
+      padding: 8px 4px;
 
-        &:hover {
-          background: #f5f5f5;
-          border-color: #999;
-        }
-      }
-
-      &.is-link {
-        padding: 0;
-        height: auto;
-        line-height: 1;
+      i {
+        margin-left: 2px;
+        font-size: 12px;
       }
     }
+  }
+
+  .more-search-row {
+    padding-top: 4px;
+    margin-top: 4px;
+    animation: slideDown 0.3s ease-out;
   }
 
   ::v-deep .avue-crud {
@@ -766,6 +744,17 @@ export default {
     color: #999;
     margin-left: 12px;
     font-weight: normal;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

@@ -2,44 +2,26 @@
  * 议题管理 avue-crud 配置
  */
 
-// 议题状态字典
+// 议题状态字典（根据API返回的topicStatus）
 const statusDict = [
-  { label: '议题申请中', value: 'draft' },
-  { label: '待上会', value: 'pending_vote' },
-  { label: '上会申请中', value: 'applying' },
-  { label: '已申请上会', value: 'approved' },
-  { label: '结论审批中', value: 'voting' },
-  { label: '结论录入完成', value: 'completed' },
-  { label: '已撤回', value: 'withdrawn' }
+  { label: '议题申请中', value: '110' },
+  { label: '已撤回', value: '120' },
+  { label: '待上会', value: '300' },
+  { label: '已申请上会', value: '350' },
+  { label: '结论录入完成', value: '950' }
 ];
 
-// 科室字典
-const departmentDict = [
-  { label: '胸外科', value: '胸外科' },
-  { label: '心内科', value: '心内科' },
-  { label: '放射科', value: '放射科' },
-  { label: '重症监护室', value: '重症监护室' },
-  { label: '门诊', value: '门诊' },
-  { label: '护理部', value: '护理部' },
-  { label: '感控部', value: '感控部' },
-  { label: '医保科', value: '医保科' },
-  { label: '急诊科', value: '急诊科' },
-  { label: '质管科', value: '质管科' }
-];
-
-// 议题当前阶段字典
+// 议题当前阶段字典（根据API返回的currentStage）
 const stageDict = [
-  { label: '全部', value: '' },
-  { label: '阶段1', value: 'stage1' },
-  { label: '阶段2', value: 'stage2' },
-  { label: '阶段3', value: 'stage3' }
+  { label: '发起议题', value: '1' },
+  { label: '申请上会', value: '3' },
+  { label: '结论录入', value: '9' }
 ];
 
-// 申请上会状态字典
+// 申请上会状态字典（根据API返回的applyMeetingStatus）
 const applyStatusDict = [
-  { label: '全部', value: '' },
-  { label: '待审批', value: 'pending' },
-  { label: '已导出', value: 'exported' }
+  { label: '否', value: '0' },
+  { label: '是', value: '1' }
 ];
 
 /**
@@ -51,8 +33,7 @@ export const topicOption = (vm) => {
     height: 'auto',
     calcHeight: 280,
     tip: false,
-    searchShow: true,
-    searchMenuSpan: 6,
+    searchShow: false,
     border: true,
     index: true,
     selection: true,
@@ -68,127 +49,75 @@ export const topicOption = (vm) => {
     column: [
       {
         label: '议题名称',
-        prop: 'title',
-        search: true,
-        searchPlaceholder: '请输入议题名称',
+        prop: 'topicName',
         minWidth: 200,
         overHidden: true,
         slot: true
       },
       {
         label: '议题状态',
-        prop: 'status',
-        search: true,
-        searchPlaceholder: '请选择议题状态',
-        type: 'select',
-        dicData: statusDict,
-        width: 120,
+        prop: 'topicStatusDesc',
+        width: 130,
         slot: true
       },
       {
         label: '当前审批节点',
-        prop: 'approvalNode',
+        prop: 'approvalTaskName',
         width: 150,
-        formatter: (row) => {
-          const nodeMap = {
-            'draft': '议题草稿',
-            'pending_vote': '待审批',
-            'applying': '申请中',
-            'approved': '已审批',
-            'voting': '投票中',
-            'completed': '已完成',
-            'withdrawn': '已撤回'
-          };
-          return nodeMap[row.status] || '未知';
-        }
+        overHidden: true
+      },
+      {
+        label: '当前执行人',
+        prop: 'approvalAssigneeName',
+        width: 120,
+        overHidden: true
       },
       {
         label: '申报科室',
-        prop: 'department',
-        search: false,
-        searchDisplay: false,
-        type: 'select',
-        dicData: departmentDict,
-        width: 120
+        prop: 'applyDeptName',
+        width: 120,
+        overHidden: true
+      },
+      {
+        label: '科室主任',
+        prop: 'applyDeptDirectorName',
+        width: 120,
+        overHidden: true
       },
       {
         label: '科室分管领导',
-        prop: 'leader',
+        prop: 'applyDeptLeaderName',
+        width: 120,
+        overHidden: true
+      },
+      {
+        label: '汇报人',
+        prop: 'reporterName',
+        width: 100
+      },
+      {
+        label: '汇报时长',
+        prop: 'reportDuration',
+        width: 100,
+        formatter: (row) => row.reportDuration ? `${row.reportDuration}分钟` : '-'
+      },
+      {
+        label: '期望汇报时间',
+        prop: 'expectReportDate',
         width: 120
       },
       {
-        label: '议题申报时间',
-        prop: 'createdAt',
-        search: true,
-        searchRange: true,
-        type: 'date',
-        format: 'YYYY-MM-DD HH:mm:ss',
-        valueFormat: 'YYYY-MM-DD',
-        width: 180
-      },
-      // 隐藏在表格中，但在搜索中使用的字段
-      {
-        label: '议题当前阶段',
-        prop: 'stage',
-        search: true,
-        searchPlaceholder: '全部',
-        type: 'select',
-        dicData: stageDict,
-        hide: true
-      },
-      {
-        label: '申请上会状态',
-        prop: 'applyStatus',
-        search: true,
-        searchPlaceholder: '全部',
-        type: 'select',
-        dicData: applyStatusDict,
-        hide: true
-      },
-      {
-        label: '开始时间',
-        prop: 'startTime',
-        search: true,
-        searchPlaceholder: '开始时间',
-        type: 'datetime',
-        format: 'YYYY-MM-DD HH:mm:ss',
-        valueFormat: 'YYYY-MM-DD HH:mm:ss',
-        hide: true
-      },
-      {
-        label: '结束时间',
-        prop: 'endTime',
-        search: true,
-        searchPlaceholder: '结束时间',
-        type: 'datetime',
-        format: 'YYYY-MM-DD HH:mm:ss',
-        valueFormat: 'YYYY-MM-DD HH:mm:ss',
-        hide: true
-      },
-      {
-        label: '申报科室主任',
-        prop: 'deptDirector',
-        search: true,
-        searchPlaceholder: '请输入申报科室主任',
-        hide: true
+        label: '议题创建时间',
+        prop: 'createTime',
+        width: 160
       }
     ]
   };
 };
 
 /**
- * 我发布的议题配置（启用申报科室搜索）
+ * 我发布的议题配置
  */
 export const myTopicsOption = (vm) => {
-  const option = topicOption(vm);
-
-  // 启用申报科室搜索
-  const deptColumn = option.column.find(col => col.prop === 'department');
-  if (deptColumn) {
-    deptColumn.search = true;
-    deptColumn.searchDisplay = true;
-    deptColumn.searchPlaceholder = '请选择申报科室';
-  }
-
-  return option;
+  return topicOption(vm);
 };

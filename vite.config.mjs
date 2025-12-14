@@ -56,7 +56,6 @@ export default ({
         '/api': {
           target: 'http://yth.xinhuimed.net:38090',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, '/api/xinhui-oa-decision/api'),
         },
       },
     },

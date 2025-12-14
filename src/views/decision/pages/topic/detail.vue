@@ -28,10 +28,6 @@
       <template #header>
         <div class="card-title-container">
           <span class="card-title">议题基础信息</span>
-          <div class="card-actions">
-            <el-button type="primary" size="small" @click="handleApprove">审批</el-button>
-            <el-button size="small" @click="handleBack">返回</el-button>
-          </div>
         </div>
       </template>
 
@@ -43,19 +39,6 @@
         <div class="topic-meta">
           <span>申报科室：{{ topicData.department }}</span>
           <span>科室主任：{{ topicData.deptDirector }}</span>
-          <span>分管领导：{{ topicData.leader }}</span>
-        </div>
-      </div>
-
-      <!-- 信息网格 -->
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="label">汇报人</span>
-          <span class="value">{{ topicData.reporter }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">科室分管领导</span>
-          <span class="value">{{ topicData.leader }}</span>
         </div>
       </div>
     </el-card>
@@ -241,6 +224,7 @@
 
 <script>
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
+import * as topicApi from '@/api/decision/topic';
 
 export default {
   name: 'TopicDetail',
@@ -314,20 +298,21 @@ export default {
       return ['议题管理', '议题详情'];
     },
     currentStepIndex() {
-      const statusMap = {
-        'draft': 0,
-        'pending_vote': 0,
-        'applying': 1,
-        'approved': 1,
-        'voting': 2,
-        'completed': 3,
-        'withdrawn': 0
-      };
-      return statusMap[this.topicData.status] || 0;
+      // 根据API返回的topicStatus和currentStage判断当前步骤
+      const stage = parseInt(this.topicData.status) || 0;
+
+      // topicStatus映射：
+      // 110-议题申请中(步骤0), 120-已撤回(步骤0)
+      // 300-待上会(步骤1), 350-已申请上会(步骤2)
+      // 950-结论录入完成(步骤3)
+      if (stage >= 900) return 3; // 结论录入完成
+      if (stage >= 300) return 2; // 议题上会/已申请上会
+      if (stage >= 200) return 1; // 申请上会
+      return 0; // 议题提交
     },
     canEdit() {
-      // 只有草稿状态可以编辑
-      return this.topicData.status === 'draft';
+      // 只有议题申请中(110)和已撤回(120)状态可以编辑
+      return this.topicData.status === '110' || this.topicData.status === '120';
     }
   },
   created() {
@@ -335,46 +320,53 @@ export default {
     this.loadTopicDetail();
   },
   methods: {
-    loadTopicDetail() {
-      // Mock 议题详情数据
-      setTimeout(() => {
-        this.topicData = {
-          id: this.topicId,
-          title: '汇报学生党支部资质资教学项',
-          department: '胸外科',
-          deptDirector: '张三',
-          reporter: '王小军',
-          leader: '张三',
-          summary: '<p>近日，学校收到教育行政主管部门关于深化科研人员参与论文的行业转变，要求恶魔部门超越基层单位进展；除常规访谈、核对数据外，涉及数据库，建设连线合作，需要新增内容关系到不完整问题责任焦虑。</p>',
-          discussion: '会前讨论情况及建议解决方案的具体内容，持续讨论相关文件的合理性，展开使用会议资源，人员要都能配合，会议实际执行与策略性意见互通有无外专业协助认证送交资料存在学术不清问题题目责任焦虑附件。',
-          attachments: [
-            { name: '文件名称.doc', size: '104MB', url: '#' },
-            { name: '文件名称.doc', size: '104MB', url: '#' },
-            { name: '文件名称.doc', size: '104MB', url: '#' }
-          ],
-          isImportant: '是',
-          needCollaboration: '是',
-          collaborationDepts: ['心内科', '放射科'],
-          collaborationLeaders: '李四、王五',
-          hasRisk: '否',
-          riskMeasures: '',
-          meetingType: '院长办公会',
-          expectedTime: '2025-09-12',
-          status: 'voting',
-          createdAt: '2025-09-12 12:12:12',
-          applyTime: '2025-09-12 12:12:12',
-          applyUser: '张三',
-          meetingCategory: '常委会',
-          meetingStartTime: '2025-09-08 15:00',
-          meetingEndTime: '2025-09-08 17:00',
-          meetingDuration: '2小时',
-          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八'],
-          meetingContent: '',
-          conclusionUser: '',
-          conclusionTime: '',
-          conclusion: ''
-        };
-      }, 300);
+    async loadTopicDetail() {
+      try {
+        const res = await topicApi.getTopicDetail(this.topicId);
+
+        if (res.data && res.data.code === 200) {
+          const data = res.data.data;
+
+          // 映射API响应字段到组件数据
+          this.topicData = {
+            id: data.id,
+            title: data.topicName,
+            department: data.applyDeptName,
+            deptDirector: data.applyDeptDirectorName,
+            reporter: data.reporterName,
+            leader: data.applyDeptLeaderName,
+            summary: data.topicSummary,
+            discussion: data.preDiscuss,
+            attachments: data.topicAttachmentList || [],
+            isImportant: data.isThreeMajorDesc,
+            needCollaboration: data.cooperateDeptName ? '是' : '否',
+            collaborationDepts: data.cooperateDeptName ? [data.cooperateDeptName] : [],
+            collaborationLeaders: data.cooperateDeptDirectorName || '',
+            hasRisk: data.isPublicOpinionDesc,
+            riskMeasures: data.riskMeasure || '',
+            meetingType: data.meetingTypeDesc,
+            expectedTime: data.expectReportDate,
+            status: data.topicStatus,
+            createdAt: data.createTime,
+            applyTime: data.agendaApplyDetail?.applyTime || '',
+            applyUser: data.agendaApplyDetail?.applyUser || '',
+            meetingCategory: data.meetingTypeDesc,
+            meetingStartTime: data.agendaApplyDetail?.meetingStartTime || '',
+            meetingEndTime: data.agendaApplyDetail?.meetingEndTime || '',
+            meetingDuration: data.reportDuration ? `${data.reportDuration}分钟` : '',
+            participants: data.agendaApplyDetail?.participants || [],
+            meetingContent: '',
+            conclusionUser: data.topicConclusion?.conclusionUser || '',
+            conclusionTime: data.topicConclusion?.conclusionTime || '',
+            conclusion: data.topicConclusion?.conclusion || ''
+          };
+        } else {
+          this.$message.error(res.data.msg || '获取议题详情失败');
+        }
+      } catch (error) {
+        console.error('获取议题详情失败：', error);
+        this.$message.error('获取议题详情失败');
+      }
     },
 
     getStepStatus(index) {

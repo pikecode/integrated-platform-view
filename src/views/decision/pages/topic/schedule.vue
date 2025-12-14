@@ -44,8 +44,12 @@
               <el-col :span="6">
                 <el-form-item label="会议类型">
                   <el-select v-model="filterForm.meetingType" placeholder="请选择会议类型" clearable>
-                    <el-option label="院长办公会" value="院长办公会" />
-                    <el-option label="党委会" value="党委会" />
+                    <el-option
+                      v-for="item in meetingTypeList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -174,6 +178,7 @@
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import MeetingDialog from './components/meeting-dialog.vue';
 import { scheduleOption } from '@/option/decision/schedule';
+import * as topicApi from '@/api/decision/topic';
 
 export default {
   name: 'TopicSchedule',
@@ -183,6 +188,10 @@ export default {
   },
   data() {
     return {
+      // 是否使用mock数据（开发调试用）
+      useMockData: true,
+      // 会议类型列表
+      meetingTypeList: [],
       filterForm: {
         meetingName: '',
         meetingTime: null,
@@ -190,24 +199,28 @@ export default {
       },
       page: {
         currentPage: 1,
-        pageSize: 10
+        pageSize: 10,
+        total: 0
       },
       loading: false,
       selectedSchedule: null,
       tableData: [],
       crudOption: scheduleOption(this),
       meetingDialogVisible: false,
-      // Mock data
+      // Mock数据
       mockSchedules: [
         {
           index: 1,
+          id: 'mock-1',
           meetingName: '9.23院长办公会—议事',
           meetingType: '院长办公会',
           meetingForm: '线上',
-          participantCount: 2,
-          meetingTime: '2025-08-08 12:00 至 15:00',
+          participantCount: 6,
+          meetingTime: '2025-12-15 09:00 至 11:00',
+          duration: '120分钟',
           status: 'wait_start',
-          duration: '30分钟',
+          agendaStatusDesc: '待开始',
+          applyUserName: '张三',
           topics: [
             {
               id: 1,
@@ -220,75 +233,84 @@ export default {
               id: 2,
               title: '关于正式任命xxx为胸外科副主任',
               department: '胸外科',
-              reporter: '张三',
-              duration: '15分钟'
-            },
-            {
-              id: 3,
-              title: '关于正式任命xxx为胸外科副主任',
-              department: '胸外科',
-              reporter: '张三',
-              duration: '15分钟'
+              reporter: '李四',
+              duration: '20分钟'
             }
           ],
           participants: ['张三', '李四', '王五', '赵六', '孙七', '周八']
         },
         {
           index: 2,
-          meetingName: '9.23院长办公会—议事',
-          meetingType: '院长办公会',
+          id: 'mock-2',
+          meetingName: '党委会—重要议题讨论',
+          meetingType: '党委会',
           meetingForm: '线下',
-          participantCount: 5,
-          meetingTime: '2025-08-08 12:00 至 15:00',
+          participantCount: 8,
+          meetingTime: '2025-12-16 14:00 至 16:30',
+          duration: '150分钟',
           status: 'ongoing',
-          duration: '2小时',
+          agendaStatusDesc: '进行中',
+          applyUserName: '李四',
           topics: [
             {
               id: 3,
-              title: '护理人员培训计划',
-              department: '护理部',
-              reporter: '李四',
-              duration: '20分钟'
-            }
-          ],
-          participants: ['张三', '李四', '王五']
-        },
-        {
-          index: 3,
-          meetingName: '党委会会议',
-          meetingType: '党委会',
-          meetingForm: '线下',
-          participantCount: 6,
-          meetingTime: '2025-08-08 12:00 至 15:00',
-          status: 'ended',
-          duration: '1.5小时',
-          topics: [
+              title: '医院年度预算审批',
+              department: '财务部',
+              reporter: '王五',
+              duration: '30分钟'
+            },
             {
               id: 4,
-              title: '医院信息系统升级方案',
-              department: '信息部',
-              reporter: '王五',
+              title: '人事任免事项',
+              department: '人事部',
+              reporter: '赵六',
               duration: '25分钟'
             }
           ],
-          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八']
+          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八', '钱九', '赵十']
         },
         {
-          index: 4,
-          meetingName: '院长办公会',
+          index: 3,
+          id: 'mock-3',
+          meetingName: '院长办公会—常规汇报',
           meetingType: '院长办公会',
           meetingForm: '线上',
-          participantCount: 7,
-          meetingTime: '2025-08-08 12:00 至 15:00',
-          status: 'cancelled',
-          duration: '1小时',
+          participantCount: 5,
+          meetingTime: '2025-12-10 10:00 至 12:00',
+          duration: '120分钟',
+          status: 'ended',
+          agendaStatusDesc: '已结束',
+          applyUserName: '王五',
           topics: [
             {
               id: 5,
-              title: '防疫应急预案制定',
-              department: '感控部',
-              reporter: '赵六',
-              duration: '18分钟'
+              title: '季度工作总结',
+              department: '行政部',
+              reporter: '孙七',
+              duration: '40分钟'
+            }
+          ],
+          participants: ['张三', '李四', '王五', '赵六', '孙七']
+        },
+        {
+          index: 4,
+          id: 'mock-4',
+          meetingName: '紧急会议—疫情防控',
+          meetingType: '院长办公会',
+          meetingForm: '线下',
+          participantCount: 4,
+          meetingTime: '2025-12-12 15:00 至 16:00',
+          duration: '60分钟',
+          status: 'cancelled',
+          agendaStatusDesc: '已取消',
+          applyUserName: '赵六',
+          topics: [
+            {
+              id: 6,
+              title: '疫情防控措施讨论',
+              department: '医务部',
+              reporter: '周八',
+              duration: '30分钟'
             }
           ],
           participants: ['张三', '李四', '王五', '赵六']
@@ -297,53 +319,130 @@ export default {
     };
   },
   mounted() {
+    this.fetchMeetingTypes();
     this.onLoad();
   },
   methods: {
+    // 获取会议类型列表
+    async fetchMeetingTypes() {
+      try {
+        const res = await topicApi.getAgendaType();
+        if (res.data && res.data.code === 200) {
+          this.meetingTypeList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取会议类型失败：', error);
+      }
+    },
+
     onLoad() {
       this.loadSchedules();
     },
 
-    loadSchedules() {
+    async loadSchedules() {
       this.loading = true;
       try {
-        // Filter by search form
-        let filtered = this.mockSchedules;
+        // 如果使用mock数据
+        if (this.useMockData) {
+          // 应用搜索过滤
+          let filtered = this.mockSchedules;
 
+          if (this.filterForm.meetingName) {
+            filtered = filtered.filter(s =>
+              s.meetingName.includes(this.filterForm.meetingName)
+            );
+          }
+
+          if (this.filterForm.meetingType) {
+            filtered = filtered.filter(s =>
+              s.meetingType === this.filterForm.meetingType
+            );
+          }
+
+          if (this.filterForm.meetingTime && this.filterForm.meetingTime.length === 2) {
+            const [startDate, endDate] = this.filterForm.meetingTime;
+            filtered = filtered.filter(s => {
+              const dateMatch = s.meetingTime.match(/(\d{4}-\d{2}-\d{2})/);
+              if (dateMatch) {
+                const meetingDate = new Date(dateMatch[1]);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                return meetingDate >= start && meetingDate <= end;
+              }
+              return false;
+            });
+          }
+
+          // 应用分页
+          const startIndex = (this.page.currentPage - 1) * this.page.pageSize;
+          this.tableData = filtered.slice(startIndex, startIndex + this.page.pageSize);
+          this.page.total = filtered.length;
+          this.loading = false;
+          return;
+        }
+
+        // 使用真实API
+        const requestData = {
+          current: this.page.currentPage,
+          size: this.page.pageSize
+        };
+
+        // 添加搜索条件
         if (this.filterForm.meetingName) {
-          filtered = filtered.filter(s =>
-            s.meetingName.includes(this.filterForm.meetingName)
-          );
+          requestData.agendaName = this.filterForm.meetingName;
         }
 
         if (this.filterForm.meetingType) {
-          filtered = filtered.filter(s =>
-            s.meetingType === this.filterForm.meetingType
-          );
+          requestData.agendaType = this.filterForm.meetingType;
         }
 
         if (this.filterForm.meetingTime && this.filterForm.meetingTime.length === 2) {
-          const [startDate, endDate] = this.filterForm.meetingTime;
-          filtered = filtered.filter(s => {
-            // Extract date from meetingTime string (format: "2025-08-08 12:00 至 15:00")
-            const dateMatch = s.meetingTime.match(/(\d{4}-\d{2}-\d{2})/);
-            if (dateMatch) {
-              const meetingDate = new Date(dateMatch[1]);
-              const start = new Date(startDate);
-              const end = new Date(endDate);
-              return meetingDate >= start && meetingDate <= end;
-            }
-            return false;
-          });
+          requestData.startTimeStart = this.filterForm.meetingTime[0];
+          requestData.startTimeEnd = this.filterForm.meetingTime[1];
         }
 
-        // Apply pagination
-        const startIndex = (this.page.currentPage - 1) * this.page.pageSize;
-        this.tableData = filtered.slice(startIndex, startIndex + this.page.pageSize);
-        this.page.total = filtered.length;
+        // 调用API
+        const res = await topicApi.getAgendaPage(requestData);
+
+        if (res.data && res.data.code === 0 && res.data.success) {
+          const apiData = res.data.data;
+          // 映射API返回的字段到表格数据
+          this.tableData = (apiData.records || []).map((item, index) => ({
+            index: (this.page.currentPage - 1) * this.page.pageSize + index + 1,
+            id: item.id,
+            meetingName: item.agendaName,
+            meetingType: item.meetingTypeDesc,
+            meetingForm: item.meetingFormDesc,
+            participantCount: item.attendeeCount,
+            meetingTime: this.formatMeetingTime(item.startTime, item.endTime),
+            duration: item.agendaDuration ? `${item.agendaDuration}分钟` : '-',
+            status: item.agendaStatus,
+            agendaStatusDesc: item.agendaStatusDesc,
+            applyUserName: item.applyUserName,
+            // 保留原始数据
+            _raw: item
+          }));
+          this.page.total = apiData.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载议程列表失败');
+          this.tableData = [];
+          this.page.total = 0;
+        }
+      } catch (error) {
+        console.error('加载议程列表失败：', error);
+        this.$message.error('加载议程列表失败');
+        this.tableData = [];
+        this.page.total = 0;
       } finally {
         this.loading = false;
       }
+    },
+
+    formatMeetingTime(startTime, endTime) {
+      if (!startTime) return '-';
+      const start = this.$dayjs(startTime).format('YYYY-MM-DD HH:mm');
+      const end = endTime ? this.$dayjs(endTime).format('HH:mm') : '';
+      return end ? `${start} 至 ${end}` : start;
     },
 
     handleSearch() {
@@ -362,7 +461,17 @@ export default {
     },
 
     handleSelectSchedule(row) {
-      this.selectedSchedule = row;
+      // 设置选中的议程
+      this.selectedSchedule = {
+        ...row,
+        // 如果API返回了议题列表，使用它；否则使用空数组
+        topics: row.topics || [],
+        // 如果API返回了参会人员，使用它；否则使用空数组
+        participants: row.participants || []
+      };
+
+      // TODO: 如果需要加载议程详情（包括议题列表和参会人员），在这里调用详情API
+      // this.loadAgendaDetail(row.id);
     },
 
     handleViewMeeting(row) {
@@ -379,14 +488,19 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        // Find and update the meeting status
-        const meetingIndex = this.mockSchedules.findIndex(m => m.index === row.index);
-        if (meetingIndex !== -1) {
-          this.mockSchedules[meetingIndex].status = 'cancelled';
-          this.loadSchedules();
-          this.$message.success('会议已取消');
-          this.selectedSchedule = null;
+      }).then(async () => {
+        try {
+          const res = await topicApi.cancelAgenda(row.id);
+          if (res.data && res.data.success) {
+            this.$message.success('会议已取消');
+            this.selectedSchedule = null;
+            this.loadSchedules();
+          } else {
+            this.$message.error(res.data.msg || '取消会议失败');
+          }
+        } catch (error) {
+          console.error('取消会议失败：', error);
+          this.$message.error('取消会议失败');
         }
       }).catch(() => {
         // User cancelled
@@ -398,12 +512,20 @@ export default {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        // Remove the meeting from mock data
-        this.mockSchedules = this.mockSchedules.filter(m => m.index !== row.index);
-        this.loadSchedules();
-        this.$message.success('会议已删除');
-        this.selectedSchedule = null;
+      }).then(async () => {
+        try {
+          const res = await topicApi.deleteAgenda(row.id);
+          if (res.data && res.data.success) {
+            this.$message.success('会议已删除');
+            this.selectedSchedule = null;
+            this.loadSchedules();
+          } else {
+            this.$message.error(res.data.msg || '删除会议失败');
+          }
+        } catch (error) {
+          console.error('删除会议失败：', error);
+          this.$message.error('删除会议失败');
+        }
       }).catch(() => {
         // User cancelled
       });

@@ -13,54 +13,55 @@
 
     <!-- 搜索表单 -->
     <div class="search-form-container">
-      <el-form :model="searchParams" label-width="80px" size="small">
-        <!-- 搜索条件 - 一行 -->
+      <el-form :model="searchParams" label-width="90px" size="small">
+        <!-- 第一行搜索条件 -->
         <el-row :gutter="20">
-          <el-col :span="4">
+          <el-col :span="6">
             <el-form-item label="任务名称:">
               <el-input
                 v-model="searchParams.title"
-                placeholder="请输入"
+                placeholder="请输入任务名称"
                 clearable
               />
             </el-form-item>
           </el-col>
 
-          <el-col :span="5">
+          <el-col :span="6">
             <el-form-item label="执行科室:">
               <el-select
                 v-model="searchParams.departments"
-                placeholder="请选择执行科室"
+                placeholder="请选择"
                 multiple
                 collapse-tags
                 clearable
+                style="width: 100%"
               >
                 <el-option label="胸外科" value="dept1" />
                 <el-option label="心内科" value="dept2" />
                 <el-option label="神经外科" value="dept3" />
               </el-select>
-              <span v-if="searchParams.departments.length > 0" class="selected-count">
-                已选：{{ searchParams.departments.length }}
-              </span>
             </el-form-item>
           </el-col>
 
-          <el-col :span="4">
+          <!-- 待反馈 tab 显示执行人 -->
+          <el-col v-if="activeTab === 'pending_feedback'" :span="6">
             <el-form-item label="执行人:">
               <el-input
                 v-model="searchParams.executor"
-                placeholder="请输入"
+                placeholder="请输入执行人"
                 clearable
               />
             </el-form-item>
           </el-col>
 
-          <el-col :span="5">
+          <!-- 其他 tab 显示任务来源 -->
+          <el-col v-if="activeTab !== 'pending_feedback'" :span="6">
             <el-form-item label="任务来源:">
               <el-select
                 v-model="searchParams.source"
-                placeholder="请选择任务来源"
+                placeholder="请选择"
                 clearable
+                style="width: 100%"
               >
                 <el-option label="系统生成" value="system" />
                 <el-option label="手动创建" value="manual" />
@@ -69,39 +70,118 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
-            <!-- 操作按钮区 -->
-            <div class="search-actions">
-              <div class="action-buttons">
-                <el-button type="primary" @click="handleSearch">查询</el-button>
-                <el-button @click="handleSearchReset">重置</el-button>
-              </div>
-              <div class="view-buttons">
-                <el-button
-                  type="text"
-                  size="small"
-                  @click="showMoreSearch = !showMoreSearch"
-                >
-                  {{ showMoreSearch ? '收起' : '更多查询条件>' }}
-                </el-button>
-              </div>
-            </div>
+          <!-- 待反馈 tab 显示任务来源 -->
+          <el-col v-if="activeTab === 'pending_feedback'" :span="6">
+            <el-form-item label="任务来源:">
+              <el-select
+                v-model="searchParams.source"
+                placeholder="请选择"
+                clearable
+                style="width: 100%"
+              >
+                <el-option label="系统生成" value="system" />
+                <el-option label="手动创建" value="manual" />
+                <el-option label="导入" value="import" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <!-- 其他 tab 显示任务内容 -->
+          <el-col v-if="activeTab !== 'pending_feedback'" :span="6">
+            <el-form-item label="任务内容:">
+              <el-input
+                v-model="searchParams.content"
+                placeholder="请输入任务内容"
+                clearable
+              />
+            </el-form-item>
           </el-col>
         </el-row>
 
-        <!-- 高级搜索选项 -->
-        <el-row v-if="showMoreSearch" :gutter="20" style="margin-top: 12px;">
-          <el-col :span="4">
-            <el-form-item label="创建时间:">
-              <el-date-picker
-                v-model="searchParams.createTimeRange"
-                type="daterange"
-                range-separator="-"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                value-format="YYYY-MM-DD"
-              />
-            </el-form-item>
+        <!-- 高级搜索选项（展开时显示） -->
+        <el-row v-if="showMoreSearch" :gutter="20" class="more-search-row">
+          <!-- 待反馈 tab 的更多条件 -->
+          <template v-if="activeTab === 'pending_feedback'">
+            <el-col :span="8">
+              <el-form-item label="配合科室:">
+                <el-select
+                  v-model="searchParams.cooperateDept"
+                  placeholder="请选择"
+                  clearable
+                  style="width: 100%"
+                >
+                  <el-option label="胸外科" value="dept1" />
+                  <el-option label="心内科" value="dept2" />
+                  <el-option label="神经外科" value="dept3" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="8">
+              <el-form-item label="配合人:">
+                <el-input
+                  v-model="searchParams.cooperatePerson"
+                  placeholder="请输入配合人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+          </template>
+
+          <!-- 其他 tab 的更多条件 -->
+          <template v-else>
+            <el-col :span="6">
+              <el-form-item label="配合科室:">
+                <el-select
+                  v-model="searchParams.cooperateDept"
+                  placeholder="请选择"
+                  clearable
+                  style="width: 100%"
+                >
+                  <el-option label="胸外科" value="dept1" />
+                  <el-option label="心内科" value="dept2" />
+                  <el-option label="神经外科" value="dept3" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="6">
+              <el-form-item label="执行人:">
+                <el-input
+                  v-model="searchParams.executor"
+                  placeholder="请输入执行人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="6">
+              <el-form-item label="配合人:">
+                <el-input
+                  v-model="searchParams.cooperatePerson"
+                  placeholder="请输入配合人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+          </template>
+        </el-row>
+
+        <!-- 按钮区域 -->
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <div class="search-buttons-row">
+              <el-button type="primary" @click="handleSearch">查询</el-button>
+              <el-button @click="handleSearchReset">重置</el-button>
+              <el-button
+                type="text"
+                @click="showMoreSearch = !showMoreSearch"
+                class="more-btn"
+              >
+                {{ showMoreSearch ? '收起' : '更多' }}
+                <i :class="showMoreSearch ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+              </el-button>
+            </div>
           </el-col>
         </el-row>
       </el-form>
@@ -179,96 +259,9 @@ export default {
         executor: '',
         cooperateDept: '',
         cooperatePerson: '',
+        content: '',
         createTimeRange: null
-      },
-      // 我参与的任务数据 - 与我发布的数据略有不同
-      mockTasks: [
-        {
-          id: 101,
-          title: '汇报学生党支部资质资教学项',
-          status: 'in_progress',
-          tabStatus: 'pending_feedback',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:12:12',
-          countdown: '3天20小时',
-          department: 'dept1',
-          assignee: '张明明',
-          cooperateDept: 'dept2',
-          cooperatePerson: '李五',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '王五',
-          source: 'system'
-        },
-        {
-          id: 102,
-          title: '关于正式任命xxx为胸外科副主任',
-          status: 'pending',
-          tabStatus: 'pending_review',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:12:12',
-          countdown: '/',
-          department: 'dept2',
-          assignee: '王五',
-          cooperateDept: 'dept3',
-          cooperatePerson: '王六',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'manual'
-        },
-        {
-          id: 103,
-          title: '关于科研经费审批流程优化',
-          status: 'completed',
-          tabStatus: 'feedbacked',
-          currentNode: 'node1',
-          content: '需要完善科研经费审批流程.',
-          dueDate: '2025-08-15 12:00',
-          countdown: '/',
-          department: 'dept1',
-          assignee: '李四',
-          cooperateDept: 'dept1',
-          cooperatePerson: '张三',
-          createdAt: '2025-08-02 10:00',
-          creatorName: '李四',
-          source: 'system'
-        },
-        {
-          id: 104,
-          title: '教师招聘计划制定',
-          status: 'completed',
-          tabStatus: 'reviewed',
-          currentNode: '/',
-          content: '制定本年度教师招聘计划.',
-          dueDate: '2025-08-20 12:00',
-          countdown: '5天15小时',
-          department: 'dept3',
-          assignee: '赵六',
-          cooperateDept: 'dept2',
-          cooperatePerson: '李五',
-          createdAt: '2025-08-03 10:00',
-          creatorName: '李四',
-          source: 'system'
-        },
-        {
-          id: 105,
-          title: '学科建设评估工作',
-          status: 'in_progress',
-          tabStatus: 'pending_feedback',
-          currentNode: '/',
-          content: '开展学科建设评估工作.',
-          dueDate: '2025-08-12 12:00',
-          countdown: '/',
-          department: 'dept1',
-          assignee: '王五',
-          cooperateDept: 'dept3',
-          cooperatePerson: '赵七',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'system'
-        }
-      ]
+      }
     };
   },
   computed: {
@@ -287,75 +280,79 @@ export default {
       this.onLoad(this.page);
     },
 
-    onLoad(page, params = {}) {
+    async onLoad(page, params = {}) {
       this.loading = true;
+      try {
+        // 构建API请求参数
+        const requestData = {
+          current: page.currentPage,
+          size: page.pageSize
+        };
 
-      let filtered = [...this.mockTasks];
+        // 添加搜索条件
+        if (this.searchParams.title) {
+          requestData.taskName = this.searchParams.title;
+        }
 
-      // 按标题搜索
-      if (this.searchParams.title) {
-        filtered = filtered.filter(t =>
-          t.title.includes(this.searchParams.title)
-        );
+        if (this.searchParams.departments && this.searchParams.departments.length > 0) {
+          requestData.executeDeptIds = this.searchParams.departments;
+        }
+
+        if (this.searchParams.status) {
+          requestData.taskStatus = this.searchParams.status;
+        }
+
+        if (this.searchParams.source) {
+          requestData.taskSource = this.searchParams.source;
+        }
+
+        if (this.searchParams.executor) {
+          requestData.executorName = this.searchParams.executor;
+        }
+
+        if (this.searchParams.cooperateDept) {
+          requestData.cooperateDeptId = this.searchParams.cooperateDept;
+        }
+
+        if (this.searchParams.cooperatePerson) {
+          requestData.cooperatePersonName = this.searchParams.cooperatePerson;
+        }
+
+        if (this.searchParams.content) {
+          requestData.taskContent = this.searchParams.content;
+        }
+
+        if (this.searchParams.createTimeRange && this.searchParams.createTimeRange.length === 2) {
+          requestData.createTimeStart = this.$dayjs(this.searchParams.createTimeRange[0]).format('YYYY-MM-DD');
+          requestData.createTimeEnd = this.$dayjs(this.searchParams.createTimeRange[1]).format('YYYY-MM-DD');
+        }
+
+        // 根据activeTab调用不同的API
+        let res;
+        if (this.activeTab === 'feedbacked') {
+          // 已反馈 - 使用 feedbackdone 接口
+          res = await taskApi.getFeedbackDoneTaskPage(requestData);
+        } else {
+          // 待反馈、待审批、已审批 - 都使用 feedback 接口
+          res = await taskApi.getFeedbackTaskPage(requestData);
+        }
+
+        if (res.data && res.data.code === 200) {
+          this.data = res.data.data.records || [];
+          this.page.total = res.data.data.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载任务失败');
+          this.data = [];
+          this.page.total = 0;
+        }
+      } catch (error) {
+        console.error('加载任务失败：', error);
+        this.$message.error('加载任务失败');
+        this.data = [];
+        this.page.total = 0;
+      } finally {
+        this.loading = false;
       }
-
-      // 按状态筛选
-      if (this.searchParams.status) {
-        filtered = filtered.filter(t => t.status === this.searchParams.status);
-      }
-
-      // 按科室筛选
-      if (this.searchParams.departments.length > 0) {
-        filtered = filtered.filter(t =>
-          this.searchParams.departments.includes(t.department)
-        );
-      }
-
-      // 按来源筛选
-      if (this.searchParams.source) {
-        filtered = filtered.filter(t => t.source === this.searchParams.source);
-      }
-
-      // 按执行人筛选
-      if (this.searchParams.executor) {
-        filtered = filtered.filter(t =>
-          (t.assignee || '').includes(this.searchParams.executor)
-        );
-      }
-
-      // 按配合科室筛选
-      if (this.searchParams.cooperateDept) {
-        filtered = filtered.filter(t =>
-          (t.cooperateDept || '') === this.searchParams.cooperateDept
-        );
-      }
-
-      // 按配合人筛选
-      if (this.searchParams.cooperatePerson) {
-        filtered = filtered.filter(t =>
-          (t.cooperatePerson || '').includes(this.searchParams.cooperatePerson)
-        );
-      }
-
-      // 按Tab状态筛选
-      const tabStatusMap = {
-        pending_feedback: 'pending_feedback',    // 待反馈
-        pending_review: 'pending_review',        // 待审批
-        feedbacked: 'feedbacked',                // 已反馈
-        reviewed: 'reviewed'                     // 已审批
-      };
-
-      const currentTabStatus = tabStatusMap[this.activeTab];
-      if (currentTabStatus) {
-        filtered = filtered.filter(t => t.tabStatus === currentTabStatus);
-      }
-
-      // 分页
-      this.page.total = filtered.length;
-      const startIndex = (page.currentPage - 1) * page.pageSize;
-      this.data = filtered.slice(startIndex, startIndex + page.pageSize);
-
-      this.loading = false;
     },
 
     handleSearch() {
@@ -372,6 +369,7 @@ export default {
         executor: '',
         cooperateDept: '',
         cooperatePerson: '',
+        content: '',
         createTimeRange: null
       };
       this.handleSearch();
@@ -393,7 +391,6 @@ export default {
   margin-bottom: 20px;
   background: white;
   padding: 0 16px;
-  border-bottom: 1px solid #e8eaed;
 
   ::v-deep .el-tabs__nav {
     border-bottom: none;
@@ -406,35 +403,61 @@ export default {
 
 .search-form-container {
   background: #f9fafb;
-  border: 1px solid #e8eaed;
   border-radius: 4px;
   padding: 16px;
   margin-bottom: 20px;
 
-  .search-actions {
+  ::v-deep .el-form {
+    .el-form-item {
+      margin-bottom: 8px;
+    }
+
+    .el-row:last-child {
+      .el-form-item {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  .search-buttons-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
     gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    padding-top: 4px;
 
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-
-      .el-button {
+    .el-button {
+      &:not(.more-btn) {
         min-width: 70px;
       }
     }
 
-    .view-buttons {
-      flex-shrink: 0;
+    .more-btn {
+      margin-left: 4px;
+      padding: 8px 4px;
+
+      i {
+        margin-left: 2px;
+        font-size: 12px;
+      }
     }
   }
 
-  .selected-count {
-    margin-left: 8px;
-    font-size: 12px;
-    color: #909399;
+  .more-search-row {
+    padding-top: 4px;
+    margin-top: 4px;
+    animation: slideDown 0.3s ease-out;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

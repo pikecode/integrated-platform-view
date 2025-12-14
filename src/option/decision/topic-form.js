@@ -91,6 +91,17 @@ export const topicFormOption = {
           placeholder: '请输入汇报人'
         },
         {
+          label: '汇报时长',
+          prop: 'duration',
+          type: 'number',
+          span: 12,
+          placeholder: '请输入汇报时长',
+          append: '分钟',
+          min: 1,
+          max: 120,
+          value: 30
+        },
+        {
           label: '科室分管领导号',
           prop: 'leader',
           type: 'input',
@@ -189,39 +200,39 @@ export const topicFormOption = {
           type: 'select',
           span: 12,
           multiple: true,
-          placeholder: '请选择协同科室（3个以内）',
+          placeholder: '请选择协同科室（支持3个以内）',
           dicData: departmentDict,
-          display: false
+          rules: [
+            { required: true, message: '请选择协同科室', trigger: 'change' }
+          ]
         },
         {
-          label: '协同科室负责人',
+          label: '协同科室主任',
           prop: 'collaborationLeaders',
           type: 'input',
           span: 12,
           placeholder: '自动显示',
-          disabled: true,
-          display: false
+          disabled: true
         },
         {
-          label: '协同科室分管领导号',
+          label: '协同科室分管领导',
           prop: 'collaborationDirectors',
           type: 'select',
           span: 12,
           multiple: true,
           placeholder: '自动显示',
           disabled: true,
-          display: false,
           dicData: []
         },
         {
-          label: '是否存在相关风险',
+          label: '是否存在舆情风险',
           prop: 'hasRisk',
           type: 'select',
           span: 12,
           dicData: yesNoDict,
           value: '否',
           rules: [
-            { required: true, message: '请选择是否存在相关风险', trigger: 'change' }
+            { required: true, message: '请选择是否存在舆情风险', trigger: 'change' }
           ]
         },
         {
@@ -230,8 +241,7 @@ export const topicFormOption = {
           type: 'textarea',
           span: 24,
           rows: 4,
-          placeholder: '请输入风险应对措施',
-          display: false
+          placeholder: '请输入风险应对措施'
         }
       ]
     },

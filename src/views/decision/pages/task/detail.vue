@@ -60,7 +60,7 @@
       <div class="right-section">
         <div class="countdown-box" v-if="showCountdown">
           <div class="countdown-label">倒计时:</div>
-          <div class="countdown-time">3天20小时</div>
+          <div class="countdown-time">{{ countdown }}</div>
           <div class="countdown-hint">
             <p>任务审批通过了，需要</p>
             <p>展示倒计时</p>
@@ -134,11 +134,127 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 任务进度和接收情况 -->
+    <el-row :gutter="20">
+      <!-- 左侧：任务进度 -->
+      <el-col :span="16">
+        <el-card class="detail-card">
+          <template #header>
+            <span class="card-title">任务进度</span>
+          </template>
+
+          <div class="progress-timeline">
+            <div
+              v-for="(progress, index) in progressList"
+              :key="progress.id"
+              class="progress-item"
+              :class="{ 'is-last': index === progressList.length - 1 }"
+            >
+              <div class="progress-dot"></div>
+              <div class="progress-content">
+                <div class="progress-header">
+                  <span class="progress-stage">{{ progress.progressStageName }}</span>
+                  <span class="progress-time">{{ progress.createTime }}</span>
+                </div>
+                <div class="progress-operator">
+                  （{{ progress.operatorTypeName }}）{{ progress.operatorName }}
+                </div>
+
+                <!-- 附件列表 -->
+                <div v-if="progress.attachmentVOList && progress.attachmentVOList.length > 0" class="progress-attachments">
+                  <div class="attachment-title">相关附件</div>
+                  <el-table :data="progress.attachmentVOList" size="small" style="width: 100%">
+                    <el-table-column prop="fileName" label="文件名" />
+                    <el-table-column prop="fileSize" label="大小" width="100">
+                      <template #default="scope">
+                        {{ scope.row.fileSize ? scope.row.fileSize + 'KB' : '' }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="150">
+                      <template #default="scope">
+                        <el-button type="text" size="small" @click="handlePreview(scope.row)">预览</el-button>
+                        <el-button type="text" size="small" @click="handleDownload(scope.row)">下载</el-button>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </div>
+            </div>
+
+            <!-- 无进度数据提示 -->
+            <el-empty v-if="!progressList || progressList.length === 0" description="暂无进度信息" />
+          </div>
+        </el-card>
+      </el-col>
+
+      <!-- 右侧：任务接收情况 -->
+      <el-col :span="8">
+        <el-card class="detail-card">
+          <template #header>
+            <span class="card-title">任务接收情况</span>
+          </template>
+
+          <div class="receive-status">
+            <!-- 已接收 -->
+            <div class="status-group">
+              <div class="status-header">
+                <span>已接收</span>
+                <span class="status-count">
+                  ({{ receiveRate.receivedCount || 0 }}/{{ receiveRate.totalCount || 0 }})
+                </span>
+              </div>
+              <div class="user-list">
+                <div
+                  v-for="user in receiveRate.receivedUserList"
+                  :key="user.id"
+                  class="user-item"
+                >
+                  <el-avatar :size="32" class="user-avatar">
+                    {{ user.userName ? user.userName.charAt(0) : '' }}
+                  </el-avatar>
+                  <span class="user-name">{{ user.userName }}</span>
+                </div>
+                <div v-if="!receiveRate.receivedUserList || receiveRate.receivedUserList.length === 0" class="empty-text">
+                  暂无
+                </div>
+              </div>
+            </div>
+
+            <!-- 已拒绝 -->
+            <div class="status-group">
+              <div class="status-header">
+                <span>已拒绝</span>
+                <span class="status-count">
+                  ({{ receiveRate.rejectedCount || 0 }}/{{ receiveRate.totalCount || 0 }})
+                </span>
+              </div>
+              <div class="user-list">
+                <div
+                  v-for="user in receiveRate.rejectedUserList"
+                  :key="user.id"
+                  class="user-item"
+                >
+                  <el-avatar :size="32" class="user-avatar rejected">
+                    {{ user.userName ? user.userName.charAt(0) : '' }}
+                  </el-avatar>
+                  <span class="user-name">{{ user.userName }}</span>
+                </div>
+                <div v-if="!receiveRate.rejectedUserList || receiveRate.rejectedUserList.length === 0" class="empty-text">
+                  暂无
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
   </basic-container>
 </template>
 
 <script>
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
+import * as taskApi from '@/api/decision/task';
 
 export default {
   name: 'TaskDetail',
@@ -148,54 +264,34 @@ export default {
   data() {
     return {
       taskId: null,
-      currentStepIndex: 2,
-      showCountdown: true,
-      processSteps: [
-        {
-          title: '任务新增',
-          status: '完成',
-          statusClass: 'status-complete',
-          time: '2025-09-12 12:12:12'
-        },
-        {
-          title: '任务接收',
-          status: '完成',
-          statusClass: 'status-complete',
-          time: '2025-09-12 12:12:12'
-        },
-        {
-          title: '任务反馈',
-          status: '进行中',
-          statusClass: 'status-process',
-          time: null
-        },
-        {
-          title: '任务完成',
-          status: '未开始',
-          statusClass: 'status-wait',
-          time: null
-        }
-      ],
+      currentStepIndex: 0,
+      showCountdown: false,
+      countdown: '',
+      processSteps: [],
       taskData: {
         id: null,
-        title: '汇报学生党支部资质资教学项',
-        source: '议题',
-        executors: [
-          { dept: '普外科', person: '王明伟、张三、李四' },
-          { dept: '胸外科', person: '王明伟、张三、李四' },
-          { dept: 'xxx科', person: '王明伟、张三、李四' }
-        ],
-        cooperators: [
-          { dept: '普外科', person: '王明伟、张三、李四' },
-          { dept: '胸外科', person: '王明伟、张三、李四' },
-          { dept: 'xxx科', person: '王明伟、张三、李四' }
-        ],
-        content: '近日，学校收到教育行政主管部门关于深化科研人员参与论文的行业转变，要求恶魔部门超越基层单位进展；除常规访谈、核对数据外，涉及数据库，建设连线合作，需要新增内容关系到不完整问题责任焦虑。科研部约谈了相关人员并开展行业讨论，进行常规访谈、核对数据，于2025年9月8日上午在校师大行政楼618会议室内涵请5名协办方家助认同议论文是否存在学术不端问题题目责任焦虑附件。并于2025年9月8日下午进行学术委员会评议（线上/线下形式），11位委员进行投票，9位委员认定论文在科研研信行为。现提交院长办公室审议。',
-        attachments: [
-          { name: '文件名称.doc', size: '104MB', url: '#' },
-          { name: '文件名称.doc', size: '104MB', url: '#' }
-        ]
-      }
+        title: '',
+        source: '',
+        executors: [],
+        cooperators: [],
+        content: '',
+        attachments: []
+      },
+      // 任务进度列表
+      progressList: [],
+      // 任务接收情况
+      receiveRate: {
+        receivedCount: 0,
+        rejectedCount: 0,
+        totalCount: 0,
+        receivedUserList: [],
+        rejectedUserList: []
+      },
+      // 权限标志
+      canReceive: false,
+      canTrans: false,
+      canFeedback: false,
+      canReject: false
     };
   },
   computed: {
@@ -208,20 +304,173 @@ export default {
     this.loadTaskDetail();
   },
   methods: {
-    loadTaskDetail() {
-      // Mock 数据加载
-      setTimeout(() => {
-        // 数据已在 data 中初始化
-        console.log('Task detail loaded:', this.taskData);
-      }, 300);
+    async loadTaskDetail() {
+      try {
+        const res = await taskApi.getTaskDetail(this.taskId);
+
+        if (res.data && res.data.code === 200) {
+          const data = res.data.data;
+
+          // 映射基本信息
+          this.taskData = {
+            id: data.id,
+            title: data.taskName || '',
+            source: data.taskSourceName || '',
+            executors: this.transformExecutorList(data.executorList || []),
+            cooperators: this.transformCooperatorList(data.cooperatorList || []),
+            content: data.taskContent || '', // 注意：接口文档中未定义此字段，保留以备后用
+            attachments: this.transformAttachmentList(data.attachmentList || [])
+          };
+
+          // 映射进度步骤
+          this.processSteps = this.buildProcessSteps(data);
+
+          // 设置当前步骤索引（基于 currentStage）
+          this.currentStepIndex = this.getCurrentStepIndex(data.currentStage);
+
+          // 设置倒计时
+          if (data.taskFinishCountdown) {
+            this.showCountdown = true;
+            this.countdown = data.taskFinishCountdown;
+          } else {
+            this.showCountdown = false;
+          }
+
+          // 设置权限标志
+          this.canReceive = data.canReceive || false;
+          this.canTrans = data.canTrans || false;
+          this.canFeedback = data.canFeedback || false;
+          this.canReject = data.canReject || false;
+
+          // 设置任务进度列表
+          this.progressList = data.progressList || [];
+
+          // 设置任务接收情况
+          this.receiveRate = data.receiveRate || {
+            receivedCount: 0,
+            rejectedCount: 0,
+            totalCount: 0,
+            receivedUserList: [],
+            rejectedUserList: []
+          };
+
+        } else {
+          this.$message.error(res.data.msg || '加载任务详情失败');
+        }
+      } catch (error) {
+        console.error('加载任务详情失败：', error);
+        this.$message.error('加载任务详情失败');
+      }
+    },
+
+    // 转换执行人列表格式
+    transformExecutorList(executorList) {
+      return executorList.map(executor => {
+        const persons = executor.receiverList
+          .map(receiver => receiver.userName)
+          .join('、');
+        return {
+          dept: executor.deptName,
+          person: persons || '未分配'
+        };
+      });
+    },
+
+    // 转换配合人列表格式
+    transformCooperatorList(cooperatorList) {
+      return cooperatorList.map(cooperator => {
+        const persons = cooperator.receiverList
+          .map(receiver => receiver.userName)
+          .join('、');
+        return {
+          dept: cooperator.deptName,
+          person: persons || '未分配'
+        };
+      });
+    },
+
+    // 转换附件列表格式
+    transformAttachmentList(attachmentList) {
+      return attachmentList.map(attachment => ({
+        id: attachment.id,
+        name: attachment.fileName || '未命名文件',
+        size: attachment.fileSize ? `${attachment.fileSize}KB` : '',
+        fileKey: attachment.fileKey || '',
+        fileType: attachment.fileType || '',
+        uploadTime: attachment.uploadTime || '',
+        uploadUserName: attachment.uploadUserName || ''
+      }));
+    },
+
+    // 构建流程步骤
+    buildProcessSteps(data) {
+      const steps = [
+        { title: '任务新增', stage: '1', status: '未开始', statusClass: 'status-wait', time: null },
+        { title: '任务接收', stage: '3', status: '未开始', statusClass: 'status-wait', time: null },
+        { title: '任务反馈', stage: '5', status: '未开始', statusClass: 'status-wait', time: null },
+        { title: '任务完成', stage: '900', status: '未开始', statusClass: 'status-wait', time: null }
+      ];
+
+      const currentStage = parseInt(data.currentStage) || 0;
+      const progressList = data.progressList || [];
+
+      // 根据 progressList 更新步骤状态
+      steps.forEach(step => {
+        const stageNum = parseInt(step.stage);
+
+        // 查找对应阶段的进度记录
+        const progress = progressList.find(p => parseInt(p.progressStage) === stageNum);
+
+        if (progress) {
+          step.time = progress.createTime;
+
+          if (currentStage > stageNum) {
+            step.status = '完成';
+            step.statusClass = 'status-complete';
+          } else if (currentStage === stageNum) {
+            step.status = '进行中';
+            step.statusClass = 'status-process';
+          }
+        } else if (currentStage >= stageNum) {
+          // 即使没有进度记录，如果当前阶段已过，也标记为完成
+          step.status = '完成';
+          step.statusClass = 'status-complete';
+        }
+      });
+
+      return steps;
+    },
+
+    // 获取当前步骤索引
+    getCurrentStepIndex(currentStage) {
+      const stage = parseInt(currentStage) || 0;
+
+      // 根据阶段号映射到步骤索引
+      if (stage >= 900) return 3; // 任务完成
+      if (stage >= 5) return 2;   // 任务反馈
+      if (stage >= 3) return 1;   // 任务接收
+      if (stage >= 1) return 0;   // 任务新增
+
+      return 0;
     },
 
     handlePreview(file) {
-      this.$message.info('预览功能开发中');
+      if (file.fileKey) {
+        // TODO: 实现文件预览，使用 fileKey 获取文件
+        this.$message.info('预览功能开发中');
+      } else {
+        this.$message.warning('文件信息不完整');
+      }
     },
 
     handleDownload(file) {
-      this.$message.success('开始下载: ' + file.name);
+      if (file.fileKey) {
+        // TODO: 实现文件下载，使用 fileKey 获取文件
+        this.$message.success('开始下载: ' + file.name);
+        // 示例: window.open(`/api/file/download?fileKey=${file.fileKey}`, '_blank');
+      } else {
+        this.$message.warning('文件信息不完整');
+      }
     }
   }
 };
@@ -449,6 +698,164 @@ export default {
 
     p {
       margin: 0;
+    }
+  }
+}
+
+// 任务进度时间轴样式
+.progress-timeline {
+  padding: 20px 0;
+  position: relative;
+
+  .progress-item {
+    display: flex;
+    position: relative;
+    padding-bottom: 32px;
+
+    &:not(.is-last)::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 24px;
+      bottom: -8px;
+      width: 2px;
+      background: #dcdfe6;
+    }
+
+    .progress-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #409eff;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px #409eff;
+      flex-shrink: 0;
+      margin-top: 2px;
+      z-index: 1;
+      position: relative;
+    }
+
+    .progress-content {
+      flex: 1;
+      margin-left: 16px;
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .progress-stage {
+          font-size: 15px;
+          font-weight: 500;
+          color: #409eff;
+        }
+
+        .progress-time {
+          font-size: 12px;
+          color: #909399;
+        }
+      }
+
+      .progress-operator {
+        font-size: 13px;
+        color: #606266;
+        margin-bottom: 12px;
+      }
+
+      .progress-attachments {
+        margin-top: 12px;
+        background: #f9fafb;
+        padding: 12px;
+        border-radius: 4px;
+
+        .attachment-title {
+          font-size: 13px;
+          font-weight: 500;
+          color: #303133;
+          margin-bottom: 8px;
+        }
+
+        ::v-deep .el-table {
+          background: transparent;
+
+          th {
+            background: transparent;
+          }
+
+          .el-button--text {
+            color: #409eff;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 任务接收情况样式
+.receive-status {
+  padding: 12px 0;
+
+  .status-group {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #303133;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #ebeef5;
+
+      .status-count {
+        font-size: 13px;
+        color: #909399;
+        font-weight: normal;
+      }
+    }
+
+    .user-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .user-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #f5f7fa;
+        border-radius: 4px;
+        font-size: 13px;
+
+        .user-avatar {
+          background: #409eff;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 500;
+
+          &.rejected {
+            background: #f56c6c;
+          }
+        }
+
+        .user-name {
+          color: #303133;
+        }
+      }
+
+      .empty-text {
+        color: #909399;
+        font-size: 13px;
+        padding: 8px 0;
+      }
     }
   }
 }

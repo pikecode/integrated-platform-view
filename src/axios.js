@@ -66,7 +66,9 @@ axios.interceptors.request.use(
     const cryptoToken = config.cryptoToken === true;
     //判断传递数据是否加密
     const cryptoData = config.cryptoData === true;
-    const token = getToken();
+    // 开发环境下优先使用调试token
+    const debugToken = import.meta.env.VITE_APP_DEBUG_TOKEN;
+    const token = debugToken || getToken();
     if (token && !isToken) {
       config.headers[website.tokenHeader] = cryptoToken
         ? 'crypto ' + crypto.encryptAES(token, crypto.cryptoKey)

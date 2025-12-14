@@ -80,7 +80,16 @@ export default {
     '$route.path': {
       handler(newPath) {
         // 根据路由更新菜单选中状态
-        const matchedPath = Object.keys(this.pathMap).find(key => newPath === key || newPath.startsWith(key + '/'));
+        // 先尝试精确匹配
+        if (this.pathMap[newPath]) {
+          this.activeMenu = newPath;
+          return;
+        }
+
+        // 按路径长度排序（从长到短），避免短路径先匹配
+        const sortedPaths = Object.keys(this.pathMap).sort((a, b) => b.length - a.length);
+        const matchedPath = sortedPaths.find(key => newPath.startsWith(key + '/'));
+
         if (matchedPath) {
           this.activeMenu = matchedPath;
         }

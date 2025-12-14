@@ -221,10 +221,14 @@ export const archive = topicId => {
 };
 
 /**
- * 获取议题详情（表单使用）
+ * 获取议题详情
  */
-export const getTopicDetail = id => {
-  return getDetail(id);
+export const getTopicDetail = (topicId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/topic/publish/v1/detail/${topicId}`,
+    method: 'get',
+    meta: { isToken: true }
+  });
 };
 
 /**
@@ -246,8 +250,109 @@ export const updateTopic = data => {
  */
 export const getTopicStatus = () => {
   return request({
-    url: '/api/decision/status/topic/status',
+    url: '/api/xinhui-oa-decision/api/decision/status/topic/status',
     method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取我发布的议题列表（分页）
+ */
+export const getMyTopicPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/page',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取科室列表
+ */
+export const getDeptList = (tenantId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/dept/${tenantId}/list`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取议题当前阶段列表
+ */
+export const getTopicStage = () => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/decision/status/topic/stage',
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取申请上会状态列表
+ */
+export const getApplyStatus = () => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/decision/status/boolean',
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取科室人员（科主任和分管领导）
+ */
+export const getDeptUsers = (deptId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/dept/${deptId}/user/get`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取会议类型列表
+ */
+export const getAgendaType = () => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/decision/status/agenda/type',
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取议程列表（分页）
+ */
+export const getAgendaPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/agenda/v1/page',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 取消议程
+ */
+export const cancelAgenda = (agendaId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/agenda/v1/cancel/${agendaId}`,
+    method: 'post',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 删除议程
+ */
+export const deleteAgenda = (agendaId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/agenda/v1/delete/${agendaId}`,
+    method: 'post',
     meta: { isToken: true }
   });
 };
