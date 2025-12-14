@@ -240,3 +240,14 @@ export const createTopic = data => {
 export const updateTopic = data => {
   return update(data);
 };
+
+/**
+ * 获取议题状态统计
+ */
+export const getTopicStatus = () => {
+  return request({
+    url: '/api/decision/status/topic/status',
+    method: 'get',
+    meta: { isToken: true }
+  });
+};

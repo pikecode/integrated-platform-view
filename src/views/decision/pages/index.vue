@@ -71,6 +71,7 @@ import WelcomeBanner from '../components/welcome-banner/index.vue';
 import QuickEntry from '../components/quick-entry/index.vue';
 import PendingItems from '../components/pending-items/index.vue';
 import ActivityLog from '../components/activity-log/index.vue';
+import * as topicApi from '@/api/decision/topic';
 
 export default {
   name: 'DecisionIndex',
@@ -225,9 +226,22 @@ export default {
     this.loadData();
   },
   methods: {
-    loadData() {
-      // 模拟数据加载
-      this.loading = false;
+    async loadData() {
+      try {
+        this.loading = true;
+        // 调用议题状态接口
+        const res = await topicApi.getTopicStatus();
+        console.log('议题状态统计数据：', res);
+
+        // 这里可以根据接口返回的数据更新页面
+        // 例如：this.pendingTopics = res.data.topics;
+
+      } catch (error) {
+        console.error('获取议题状态失败：', error);
+        this.$message.error('获取数据失败');
+      } finally {
+        this.loading = false;
+      }
     },
 
     handleTopicCreate() {
