@@ -376,72 +376,100 @@ export default {
     this.onLoad(this.page);
   },
   methods: {
-    onLoad(page, params = {}) {
+    async onLoad(page, params = {}) {
       this.loading = true;
-      setTimeout(() => {
-        try {
-          let filtered = [...this.mockTopics];
+      try {
+        // 构建API请求参数
+        const requestData = {
+          current: page.currentPage,
+          size: page.pageSize
+        };
 
-          // 按标签页筛选
-          if (this.activeTab === 'pending') {
-            filtered = filtered.filter(topic => topic.applyStatus === 'pending');
-          } else {
-            filtered = filtered.filter(topic => topic.applyStatus === 'exported');
-          }
-
-          if (params.title) {
-            filtered = filtered.filter(topic =>
-              topic.title.includes(params.title)
-            );
-          }
-
-          if (params.approvalType) {
-            filtered = filtered.filter(topic =>
-              topic.approvalType === params.approvalType
-            );
-          }
-
-          if (params.approvalNode) {
-            filtered = filtered.filter(topic =>
-              topic.approvalNode === params.approvalNode
-            );
-          }
-
-          if (params.deptDirector) {
-            filtered = filtered.filter(topic =>
-              topic.deptDirector.includes(params.deptDirector)
-            );
-          }
-
-          if (params.createdAt && params.createdAt.length === 2) {
-            const [startDate, endDate] = params.createdAt;
-            filtered = filtered.filter(topic => {
-              const topicDate = new Date(topic.createdAt);
-              const start = new Date(startDate);
-              const end = new Date(endDate);
-              end.setHours(23, 59, 59, 999);
-              return topicDate >= start && topicDate <= end;
-            });
-          }
-
-          if (params.department) {
-            filtered = filtered.filter(topic =>
-              topic.department === params.department
-            );
-          }
-
-          this.page.total = filtered.length;
-
-          const start = (page.currentPage - 1) * page.pageSize;
-          const end = start + page.pageSize;
-          this.data = filtered.slice(start, end);
-        } catch (error) {
-          this.$message.error('加载议题失败');
-        } finally {
-          this.loading = false;
-          this.$refs.crud?.toggleSelection();
+        // 添加搜索条件
+        if (this.searchParams.title || params.title) {
+          requestData.topicName = this.searchParams.title || params.title;
         }
-      }, 500);
+
+        if (this.searchParams.approvalType || params.approvalType) {
+          requestData.approvalType = this.searchParams.approvalType || params.approvalType;
+        }
+
+        if (this.searchParams.department || params.department) {
+          requestData.applyDeptId = this.searchParams.department || params.department;
+        }
+
+        if (this.searchParams.createdAt && this.searchParams.createdAt.length === 2) {
+          requestData.applyTimeStart = this.$dayjs(this.searchParams.createdAt[0]).format('YYYY-MM-DD');
+          requestData.applyTimeEnd = this.$dayjs(this.searchParams.createdAt[1]).format('YYYY-MM-DD');
+        }
+
+        if (this.searchParams.approvalNode || params.approvalNode) {
+          requestData.currentStageList = [this.searchParams.approvalNode || params.approvalNode];
+        }
+
+        // 根据当前tab调用不同的API
+        let res;
+        if (this.activeTab === 'pending') {
+          // 待审批
+          res = await topicApi.getPendingApprovalTopicPage(requestData);
+        } else {
+          // 已审批
+          res = await topicApi.getApprovedTopicPage(requestData);
+        }
+
+        if (res.data && res.data.code === 200) {
+          const apiData = res.data.data;
+          // 映射API返回的字段到表格数据
+          this.data = (apiData.records || []).map(item => ({
+            id: item.id,
+            title: item.topicName,
+            topicNo: item.topicNo,
+            status: item.topicStatus,
+            statusDesc: item.topicStatusDesc,
+            stage: item.currentStage,
+            stageDesc: item.currentStageDesc,
+            applyStatus: item.applyMeetingStatus,
+            applyStatusDesc: item.applyMeetingStatusDesc,
+            approvalType: item.approvalType,
+            approvalNode: item.currentStageDesc,
+            approvalTaskName: item.approvalTaskName,
+            approvalAssigneeName: item.approvalAssigneeName,
+            approvalTime: item.approvalTime,
+            department: item.applyDeptName,
+            deptId: item.applyDeptId,
+            deptDirector: item.applyDeptDirectorName,
+            deptDirectorId: item.applyDeptDirectorId,
+            leader: item.applyDeptLeaderName,
+            leaderId: item.applyDeptLeaderId,
+            creator: item.publishUserName,
+            creatorId: item.publishUserId,
+            createdAt: item.createTime,
+            meetingType: item.meetingType,
+            meetingTypeDesc: item.meetingTypeDesc,
+            // 权限按钮
+            canEdit: item.canEdit,
+            canApplyMeeting: item.canApplyMeeting,
+            canInputConclusion: item.canInputConclusion,
+            canWithdraw: item.canWithdraw,
+            canPrint: item.canPrint,
+            // 保留原始数据
+            _raw: item
+          }));
+          this.page.total = apiData.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载议题失败');
+          this.data = [];
+          this.page.total = 0;
+        }
+      } catch (error) {
+        console.error('加载议题失败：', error);
+        this.$message.error('加载议题失败');
+        this.data = [];
+        this.page.total = 0;
+      } finally {
+        this.loading = false;
+        this.$refs.crud?.toggleSelection();
+      }
     },
 
     handleTabChange() {

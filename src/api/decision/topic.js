@@ -356,3 +356,27 @@ export const deleteAgenda = (agendaId) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 获取待审批议题列表（分页）
+ */
+export const getPendingApprovalTopicPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/approval/v1/page/approval',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取已审批议题列表（分页）
+ */
+export const getApprovedTopicPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/approval/v1/page/approvaldone',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
