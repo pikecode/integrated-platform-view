@@ -32,11 +32,11 @@
                 <el-form-item label="会议时间">
                   <el-date-picker
                     v-model="filterForm.meetingTime"
-                    type="daterange"
+                    type="datetimerange"
                     range-separator="-"
-                    start-placeholder="开始日期"
-                    end-placeholder="结束日期"
-                    value-format="YYYY-MM-DD"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     style="width: 100%"
                   />
                 </el-form-item>
@@ -84,20 +84,20 @@
               type="primary"
               size="small"
               @click.stop="handleEditMeeting(scope.row)"
-              v-if="scope.row.status === 'wait_start'"
+              v-if="scope.row.agendaStatus === '10'"
             >
               修改会议信息
             </el-link>
-            <el-divider direction="vertical" v-if="scope.row.status === 'wait_start'"></el-divider>
+            <el-divider direction="vertical" v-if="scope.row.agendaStatus === '10'"></el-divider>
             <el-link
               type="primary"
               size="small"
               @click.stop="handleCancelMeeting(scope.row)"
-              v-if="scope.row.status === 'wait_start'"
+              v-if="scope.row.agendaStatus === '10'"
             >
               取消会议
             </el-link>
-            <el-divider direction="vertical" v-if="scope.row.status === 'wait_start'"></el-divider>
+            <el-divider direction="vertical" v-if="scope.row.agendaStatus === '10'"></el-divider>
             <el-link
               type="danger"
               size="small"
@@ -148,7 +148,7 @@
         </div>
 
         <!-- 参会人员 -->
-        <div class="participants-section">
+        <div class="participants-section" v-if="selectedSchedule.participants && selectedSchedule.participants.length > 0">
           <div class="section-title">参会人员: {{ selectedSchedule.participants.length }}人</div>
           <div class="participants-list">
             <div v-for="participant in selectedSchedule.participants" :key="participant" class="participant-tag">
@@ -170,6 +170,13 @@
     <meeting-dialog
       v-model="meetingDialogVisible"
       :meeting-data="selectedSchedule"
+      @refresh="loadSchedules"
+    />
+
+    <!-- 查看会议详情弹窗 -->
+    <meeting-view-dialog
+      v-model="meetingViewDialogVisible"
+      :meeting-data="viewingMeeting"
     />
   </basic-container>
 </template>
@@ -177,6 +184,7 @@
 <script>
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import MeetingDialog from './components/meeting-dialog.vue';
+import MeetingViewDialog from './components/meeting-view-dialog.vue';
 import { scheduleOption } from '@/option/decision/schedule';
 import * as topicApi from '@/api/decision/topic';
 
@@ -184,12 +192,11 @@ export default {
   name: 'TopicSchedule',
   components: {
     DecisionBreadcrumb,
-    MeetingDialog
+    MeetingDialog,
+    MeetingViewDialog
   },
   data() {
     return {
-      // 是否使用mock数据（开发调试用）
-      useMockData: true,
       // 会议类型列表
       meetingTypeList: [],
       filterForm: {
@@ -207,115 +214,8 @@ export default {
       tableData: [],
       crudOption: scheduleOption(this),
       meetingDialogVisible: false,
-      // Mock数据
-      mockSchedules: [
-        {
-          index: 1,
-          id: 'mock-1',
-          meetingName: '9.23院长办公会—议事',
-          meetingType: '院长办公会',
-          meetingForm: '线上',
-          participantCount: 6,
-          meetingTime: '2025-12-15 09:00 至 11:00',
-          duration: '120分钟',
-          status: 'wait_start',
-          agendaStatusDesc: '待开始',
-          applyUserName: '张三',
-          topics: [
-            {
-              id: 1,
-              title: '汇报学生党支部资质资教学项',
-              department: '胸外科',
-              reporter: '张三',
-              duration: '15分钟'
-            },
-            {
-              id: 2,
-              title: '关于正式任命xxx为胸外科副主任',
-              department: '胸外科',
-              reporter: '李四',
-              duration: '20分钟'
-            }
-          ],
-          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八']
-        },
-        {
-          index: 2,
-          id: 'mock-2',
-          meetingName: '党委会—重要议题讨论',
-          meetingType: '党委会',
-          meetingForm: '线下',
-          participantCount: 8,
-          meetingTime: '2025-12-16 14:00 至 16:30',
-          duration: '150分钟',
-          status: 'ongoing',
-          agendaStatusDesc: '进行中',
-          applyUserName: '李四',
-          topics: [
-            {
-              id: 3,
-              title: '医院年度预算审批',
-              department: '财务部',
-              reporter: '王五',
-              duration: '30分钟'
-            },
-            {
-              id: 4,
-              title: '人事任免事项',
-              department: '人事部',
-              reporter: '赵六',
-              duration: '25分钟'
-            }
-          ],
-          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八', '钱九', '赵十']
-        },
-        {
-          index: 3,
-          id: 'mock-3',
-          meetingName: '院长办公会—常规汇报',
-          meetingType: '院长办公会',
-          meetingForm: '线上',
-          participantCount: 5,
-          meetingTime: '2025-12-10 10:00 至 12:00',
-          duration: '120分钟',
-          status: 'ended',
-          agendaStatusDesc: '已结束',
-          applyUserName: '王五',
-          topics: [
-            {
-              id: 5,
-              title: '季度工作总结',
-              department: '行政部',
-              reporter: '孙七',
-              duration: '40分钟'
-            }
-          ],
-          participants: ['张三', '李四', '王五', '赵六', '孙七']
-        },
-        {
-          index: 4,
-          id: 'mock-4',
-          meetingName: '紧急会议—疫情防控',
-          meetingType: '院长办公会',
-          meetingForm: '线下',
-          participantCount: 4,
-          meetingTime: '2025-12-12 15:00 至 16:00',
-          duration: '60分钟',
-          status: 'cancelled',
-          agendaStatusDesc: '已取消',
-          applyUserName: '赵六',
-          topics: [
-            {
-              id: 6,
-              title: '疫情防控措施讨论',
-              department: '医务部',
-              reporter: '周八',
-              duration: '30分钟'
-            }
-          ],
-          participants: ['张三', '李四', '王五', '赵六']
-        }
-      ]
+      meetingViewDialogVisible: false,
+      viewingMeeting: null
     };
   },
   mounted() {
@@ -342,45 +242,6 @@ export default {
     async loadSchedules() {
       this.loading = true;
       try {
-        // 如果使用mock数据
-        if (this.useMockData) {
-          // 应用搜索过滤
-          let filtered = this.mockSchedules;
-
-          if (this.filterForm.meetingName) {
-            filtered = filtered.filter(s =>
-              s.meetingName.includes(this.filterForm.meetingName)
-            );
-          }
-
-          if (this.filterForm.meetingType) {
-            filtered = filtered.filter(s =>
-              s.meetingType === this.filterForm.meetingType
-            );
-          }
-
-          if (this.filterForm.meetingTime && this.filterForm.meetingTime.length === 2) {
-            const [startDate, endDate] = this.filterForm.meetingTime;
-            filtered = filtered.filter(s => {
-              const dateMatch = s.meetingTime.match(/(\d{4}-\d{2}-\d{2})/);
-              if (dateMatch) {
-                const meetingDate = new Date(dateMatch[1]);
-                const start = new Date(startDate);
-                const end = new Date(endDate);
-                return meetingDate >= start && meetingDate <= end;
-              }
-              return false;
-            });
-          }
-
-          // 应用分页
-          const startIndex = (this.page.currentPage - 1) * this.page.pageSize;
-          this.tableData = filtered.slice(startIndex, startIndex + this.page.pageSize);
-          this.page.total = filtered.length;
-          this.loading = false;
-          return;
-        }
-
         // 使用真实API
         const requestData = {
           current: this.page.currentPage,
@@ -404,21 +265,25 @@ export default {
         // 调用API
         const res = await topicApi.getAgendaPage(requestData);
 
-        if (res.data && res.data.code === 0 && res.data.success) {
+        if (res.data && res.data.code === 200 && res.data.success) {
           const apiData = res.data.data;
           // 映射API返回的字段到表格数据
           this.tableData = (apiData.records || []).map((item, index) => ({
             index: (this.page.currentPage - 1) * this.page.pageSize + index + 1,
             id: item.id,
             meetingName: item.agendaName,
-            meetingType: item.meetingTypeDesc,
+            meetingType: item.meetingType,  // 使用类型代码，不是描述
+            meetingTypeDesc: item.meetingTypeDesc,  // 保存描述供显示使用
             meetingForm: item.meetingFormDesc,
             participantCount: item.attendeeCount,
             meetingTime: this.formatMeetingTime(item.startTime, item.endTime),
             duration: item.agendaDuration ? `${item.agendaDuration}分钟` : '-',
-            status: item.agendaStatus,
+            status: item.agendaStatusDesc || item.agendaStatus,  // 优先使用描述
+            agendaStatus: item.agendaStatus,  // 保存状态代码
             agendaStatusDesc: item.agendaStatusDesc,
             applyUserName: item.applyUserName,
+            participants: [],  // 默认空数组，可从详情API获取实际数据
+            topics: [],  // 默认空数组，可从详情API获取实际数据
             // 保留原始数据
             _raw: item
           }));
@@ -445,9 +310,10 @@ export default {
       return end ? `${start} 至 ${end}` : start;
     },
 
-    handleSearch() {
+    async handleSearch() {
+      console.log('搜索条件：', this.filterForm);
       this.page.currentPage = 1;
-      this.loadSchedules();
+      await this.loadSchedules();
     },
 
     handleReset() {
@@ -475,7 +341,8 @@ export default {
     },
 
     handleViewMeeting(row) {
-      this.$message.info('查看会议详情功能开发中');
+      this.viewingMeeting = row;
+      this.meetingViewDialogVisible = true;
     },
 
     handleEditMeeting(row) {
@@ -587,6 +454,7 @@ export default {
       padding: 15px;
       background: #f5f7fa;
       border-bottom: 1px solid #ebeef5;
+      flex-shrink: 0;
 
       .filter-form {
         margin: 0;

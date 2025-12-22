@@ -358,6 +358,29 @@ export const deleteAgenda = (agendaId) => {
 };
 
 /**
+ * 获取议程详情
+ */
+export const getAgendaDetail = (agendaId) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/agenda/v1/detail/${agendaId}`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 更新议程
+ */
+export const updateAgenda = (data) => {
+  return request({
+    url: `/api/xinhui-oa-decision/api/agenda/v1/update`,
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
  * 获取待审批议题列表（分页）
  */
 export const getPendingApprovalTopicPage = (data) => {

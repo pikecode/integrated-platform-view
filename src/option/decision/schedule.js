@@ -4,16 +4,16 @@
 
 // 会议状态字典
 const statusDict = [
-  { label: '待进行', value: 'wait_start' },
-  { label: '进行中', value: 'ongoing' },
-  { label: '已结束', value: 'ended' },
-  { label: '已取消', value: 'cancelled' }
+  { label: '待进行', value: '10' },
+  { label: '进行中', value: '20' },
+  { label: '已结束', value: '30' },
+  { label: '已取消', value: '40' }
 ];
 
 // 会议类型字典
 const meetingTypeDict = [
-  { label: '院长办公会', value: '院长办公会' },
-  { label: '党委会', value: '党委会' }
+  { label: '院长办公会', value: '10' },
+  { label: '党委会', value: '20' }
 ];
 
 // 会议形式字典
@@ -30,11 +30,11 @@ export const scheduleOption = (vm) => {
   return {
     // 基础配置
     height: 'auto',
-    calcHeight: 280,
+    calcHeight: 320,
     tip: false,
     searchShow: false,
     border: true,
-    index: true,
+    index: false,
     selection: false,
     viewBtn: false,
     addBtn: false,
@@ -49,8 +49,8 @@ export const scheduleOption = (vm) => {
       {
         label: '序号',
         prop: 'index',
-        width: 50,
-        type: 'index'
+        width: 60,
+        align: 'center'
       },
       {
         label: '会议名称',
@@ -63,9 +63,10 @@ export const scheduleOption = (vm) => {
         label: '会议类型',
         prop: 'meetingType',
         search: false,
-        type: 'select',
-        dicData: meetingTypeDict,
-        width: 100
+        width: 100,
+        formatter: (row) => {
+          return row.meetingTypeDesc || '-';
+        }
       },
       {
         label: '会议形式',
@@ -94,17 +95,9 @@ export const scheduleOption = (vm) => {
         label: '会议状态',
         prop: 'status',
         search: false,
-        type: 'select',
-        dicData: statusDict,
         width: 100,
         formatter: (row) => {
-          const statusMap = {
-            'wait_start': '待进行',
-            'ongoing': '进行中',
-            'ended': '已结束',
-            'cancelled': '已取消'
-          };
-          return statusMap[row.status] || '-';
+          return row.agendaStatusDesc || row.status || '-';
         }
       }
     ]

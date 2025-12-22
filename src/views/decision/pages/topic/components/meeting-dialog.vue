@@ -19,8 +19,8 @@
               placeholder="请选择会议类型"
               @change="handleMeetingTypeChange"
             >
-              <el-option label="院长办公会" value="院长办公会" />
-              <el-option label="党委会" value="党委会" />
+              <el-option label="院长办公会" value="10" />
+              <el-option label="党委会" value="20" />
             </el-select>
           </el-form-item>
 
@@ -78,46 +78,6 @@
         </el-form>
       </div>
 
-      <!-- 右侧：议题列表 -->
-      <div class="right-section">
-        <div class="section-title">议题信息</div>
-        <div class="topics-table-wrapper">
-          <el-table
-            :data="topicList"
-            stripe
-            size="small"
-            style="width: 100%; height: 100%"
-          >
-            <el-table-column prop="index" label="序号" width="50" />
-            <el-table-column prop="title" label="议题名称" min-width="200" />
-            <el-table-column prop="department" label="申请科室" width="100" />
-            <el-table-column prop="director" label="申请科室主任" width="100" />
-            <el-table-column label="操作" width="80" fixed="right">
-              <template #default="scope">
-                <el-button
-                  type="text"
-                  size="small"
-                  style="color: #f56c6c"
-                  @click="handleRemoveTopic(scope.row)"
-                >
-                  移除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-        </div>
-
-        <!-- 分页 -->
-        <div class="pagination-wrapper" v-if="topicTotal > 0">
-          <el-pagination
-            :current-page="topicPage.currentPage"
-            :page-size="topicPage.pageSize"
-            :total="topicTotal"
-            @current-change="handleTopicPageChange"
-            layout="prev, pager, next"
-          />
-        </div>
-      </div>
     </div>
 
     <!-- 底部操作按钮 -->
@@ -132,6 +92,7 @@
 
 <script>
 import { defineComponent } from 'vue';
+import * as topicApi from '@/api/decision/topic';
 
 export default defineComponent({
   name: 'MeetingDialog',
@@ -148,7 +109,9 @@ export default defineComponent({
   emits: ['update:modelValue'],
   data() {
     return {
+      loading: false,
       formData: {
+        id: '',
         meetingType: '',
         meetingName: '',
         startTime: null,
@@ -157,84 +120,6 @@ export default defineComponent({
         participants: []
       },
       selectedParticipants: [],
-      // Mock topic data
-      mockTopics: [
-        {
-          index: 1,
-          id: 1,
-          title: '汇报学生党支部资质资教学项',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 2,
-          id: 2,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 3,
-          id: 3,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 4,
-          id: 4,
-          title: '汇报学生党支部资质资教学项',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 5,
-          id: 5,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 6,
-          id: 6,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 7,
-          id: 7,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 8,
-          id: 8,
-          title: '汇报学生党支部资质资教学项',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 9,
-          id: 9,
-          title: '汇报学生党支部资质资教学项',
-          department: '胸外科',
-          director: '张三'
-        },
-        {
-          index: 10,
-          id: 10,
-          title: '关于正式任命xxx为胸外科副主任',
-          department: '胸外科',
-          director: '张三'
-        }
-      ],
-      topicList: [],
-      topicPage: {
-        currentPage: 1,
-        pageSize: 10
-      },
       topicTotal: 0
     };
   },
@@ -242,7 +127,6 @@ export default defineComponent({
     modelValue(val) {
       if (val) {
         this.initForm();
-        this.loadTopics();
       }
     },
     meetingData: {
@@ -257,17 +141,22 @@ export default defineComponent({
   methods: {
     initForm() {
       if (this.meetingData && this.meetingData.meetingName) {
+        // 优先使用 _raw 中的原始数据
+        const rawData = this.meetingData._raw || this.meetingData;
+
         this.formData = {
+          id: this.meetingData.id || '',
           meetingType: this.meetingData.meetingType || '',
-          meetingName: this.meetingData.meetingName || '',
-          startTime: null,
-          endTime: null,
-          meetingForm: this.meetingData.meetingForm || '',
+          meetingName: this.meetingData.meetingName || this.meetingData.agendaName || '',
+          startTime: rawData.startTime ? rawData.startTime.split(' ')[0] : null,
+          endTime: rawData.endTime ? rawData.endTime.split(' ')[0] : null,
+          meetingForm: this.meetingData.meetingForm || this.meetingData.meetingFormDesc || '',
           participants: this.meetingData.participants || []
         };
         this.selectedParticipants = [...(this.meetingData.participants || [])];
       } else {
         this.formData = {
+          id: '',
           meetingType: '',
           meetingName: '',
           startTime: null,
@@ -279,15 +168,6 @@ export default defineComponent({
       }
     },
 
-    loadTopics() {
-      this.topicTotal = this.mockTopics.length;
-      const startIndex = (this.topicPage.currentPage - 1) * this.topicPage.pageSize;
-      this.topicList = this.mockTopics.slice(
-        startIndex,
-        startIndex + this.topicPage.pageSize
-      );
-    },
-
     handleMeetingTypeChange(val) {
       // Can add logic here to handle meeting type change
     },
@@ -295,26 +175,6 @@ export default defineComponent({
     handleSelectParticipants() {
       // This would typically open a user selection dialog
       this.$message.info('选择人员功能开发中');
-    },
-
-    handleRemoveTopic(row) {
-      this.$confirm('确定移除此议题吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        // Remove topic from mock data
-        this.mockTopics = this.mockTopics.filter(t => t.id !== row.id);
-        this.loadTopics();
-        this.$message.success('移除成功');
-      }).catch(() => {
-        // User cancelled
-      });
-    },
-
-    handleTopicPageChange(page) {
-      this.topicPage.currentPage = page;
-      this.loadTopics();
     },
 
     handleClose(val) {
@@ -339,14 +199,46 @@ export default defineComponent({
         this.$message.warning('请选择会议形式');
         return;
       }
-      if (this.selectedParticipants.length === 0) {
-        this.$message.warning('请选择参会人员');
-        return;
-      }
 
-      // Submit
-      this.$message.success('申请上会成功');
-      this.$emit('update:modelValue', false);
+      this.loading = true;
+      try {
+        // 构建API请求数据
+        const submitData = {
+          id: this.formData.id,
+          meetingType: this.formData.meetingType,
+          agendaName: this.formData.meetingName,
+          meetingForm: this.formData.meetingForm,
+          startTime: this.formatTimeToISO(this.formData.startTime),
+          endTime: this.formatTimeToISO(this.formData.endTime)
+        };
+
+        topicApi.updateAgenda(submitData).then(res => {
+          if (res.data && res.data.code === 200 && res.data.success) {
+            this.$message.success('修改会议信息成功');
+            this.$emit('update:modelValue', false);
+            // 触发刷新列表
+            this.$emit('refresh');
+          } else {
+            this.$message.error(res.data.msg || '修改会议信息失败');
+          }
+        }).catch(error => {
+          console.error('修改会议信息失败：', error);
+          this.$message.error('修改会议信息失败');
+        }).finally(() => {
+          this.loading = false;
+        });
+      } catch (error) {
+        console.error('修改会议信息失败：', error);
+        this.$message.error('修改会议信息失败');
+        this.loading = false;
+      }
+    },
+
+    formatTimeToISO(dateStr) {
+      // 将 YYYY-MM-DD 转换为 ISO 8601 格式
+      if (!dateStr) return null;
+      // 添加时间部分，格式为午夜时间
+      return `${dateStr}T00:00:00.000Z`;
     }
   }
 });
@@ -371,10 +263,7 @@ export default defineComponent({
 }
 
 .dialog-content {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
-  height: 500px;
+  display: block;
 
   .section-title {
     font-size: 14px;
@@ -435,43 +324,6 @@ export default defineComponent({
       }
     }
   }
-
-  .right-section {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #ebeef5;
-    border-radius: 4px;
-    overflow: hidden;
-
-    .topics-table-wrapper {
-      flex: 1;
-      overflow-y: auto;
-
-      ::v-deep {
-        .el-table {
-          border: none;
-
-          .el-table__header-wrapper {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-          }
-        }
-      }
-    }
-
-    .pagination-wrapper {
-      padding: 10px;
-      background: #f5f7fa;
-      border-top: 1px solid #ebeef5;
-      display: flex;
-      justify-content: center;
-
-      ::v-deep .el-pagination {
-        display: inline-flex;
-      }
-    }
-  }
 }
 
 .dialog-footer {
@@ -484,14 +336,4 @@ export default defineComponent({
   }
 }
 
-@media (max-width: 1200px) {
-  .dialog-content {
-    grid-template-columns: 1fr;
-    height: auto;
-
-    .right-section {
-      height: 400px;
-    }
-  }
-}
 </style>
