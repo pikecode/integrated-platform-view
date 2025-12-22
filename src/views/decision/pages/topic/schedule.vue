@@ -1,625 +1,828 @@
 <template>
-  <div class="schedule-page">
-    <!-- 面包屑导航 -->
+  <basic-container>
     <decision-breadcrumb :breadcrumbs="['议题管理', '议程安排']" />
 
-    <!-- 操作按钮区 -->
-    <div class="action-bar">
-      <el-button type="primary" @click="handleAddSchedule">
-        <i class="el-icon-plus"></i> 新增议程
-      </el-button>
-      <el-button @click="handleExport">导出</el-button>
+    <!-- 页面标题和操作按钮 -->
+    <div class="schedule-header">
+      <h3 class="header-title">议程安排</h3>
+      <div class="header-actions">
+        <el-button type="primary" size="small" @click="handlePrintSchedule">打印议程</el-button>
+      </div>
     </div>
 
-    <!-- 议程日历视图 -->
-    <div class="schedule-container">
-      <!-- 左侧月历 -->
-      <div class="calendar-panel">
-        <el-date-picker
-          v-model="selectedDate"
-          type="month"
-          placeholder="选择日期"
-          @change="handleDateChange"
-          style="width: 100%"
-        />
-        <div class="legend">
-          <div class="legend-item">
-            <span class="legend-icon" style="background: #f0ad4e;"></span>
-            <span>待审批</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-icon" style="background: #5cb85c;"></span>
-            <span>已通过</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-icon" style="background: #d9534f;"></span>
-            <span>已拒绝</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-icon" style="background: #0275d8;"></span>
-            <span>进行中</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 右侧议程列表 -->
-      <div class="schedule-list">
-        <!-- 搜索过滤 -->
-        <div class="filter-section">
-          <el-form :model="filterForm" class="filter-form" label-width="80px">
+    <!-- 主容器：左侧表格 + 右侧详情 -->
+    <div class="schedule-main">
+      <!-- 左侧：议程表格 -->
+      <div class="schedule-table-section">
+        <!-- 搜索和筛选 -->
+        <div class="filter-bar">
+          <el-form :model="filterForm" label-width="80px" size="small" class="filter-form">
             <el-row :gutter="20">
-              <el-col :xs="24" :sm="12" :md="8">
-                <el-form-item label="议题名称：">
+              <el-col :span="6">
+                <el-form-item label="会议名称">
                   <el-input
-                    v-model="filterForm.title"
+                    v-model="filterForm.meetingName"
                     placeholder="请输入"
                     clearable
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8">
-                <el-form-item label="议程状态：">
-                  <el-select
-                    v-model="filterForm.status"
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
-                    <el-option label="待审批" value="pending" />
-                    <el-option label="已通过" value="approved" />
-                    <el-option label="已拒绝" value="rejected" />
-                    <el-option label="进行中" value="ongoing" />
-                    <el-option label="已结束" value="ended" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :md="8">
-                <el-form-item label="日期范围：">
+              <el-col :span="6">
+                <el-form-item label="会议时间">
                   <el-date-picker
-                    v-model="filterForm.dateRange"
+                    v-model="filterForm.meetingTime"
                     type="daterange"
-                    range-separator="至"
+                    range-separator="-"
                     start-placeholder="开始日期"
                     end-placeholder="结束日期"
+                    value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="24" :md="24" class="filter-buttons">
-                <el-button type="primary" @click="handleSearch">查询</el-button>
-                <el-button @click="handleReset">重置</el-button>
+              <el-col :span="6">
+                <el-form-item label="会议类型">
+                  <el-select v-model="filterForm.meetingType" placeholder="请选择会议类型" clearable>
+                    <el-option
+                      v-for="item in meetingTypeList"
+                      :key="item.code"
+                      :label="item.value"
+                      :value="item.code"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="20">
+              <el-col :span="24">
+                <div class="filter-buttons">
+                  <el-button type="primary" size="small" @click="handleSearch">查询</el-button>
+                  <el-button size="small" @click="handleReset">重置</el-button>
+                </div>
               </el-col>
             </el-row>
           </el-form>
         </div>
 
-        <!-- 议程卡片列表 -->
-        <div class="schedule-cards">
-          <div
-            v-if="schedules.length > 0"
-            v-for="schedule in schedules"
-            :key="schedule.id"
-            class="schedule-card"
-            :class="`status-${schedule.status}`"
-          >
-            <div class="card-header">
-              <div class="schedule-title">
-                <span class="schedule-date">{{ formatDate(schedule.startTime) }}</span>
-                <span class="schedule-time">{{ formatTime(schedule.startTime) }} - {{ formatTime(schedule.endTime) }}</span>
-              </div>
-              <div class="status-badge">
-                <el-tag
-                  :type="getStatusType(schedule.status)"
-                  effect="dark"
-                  size="small"
-                >
-                  {{ getStatusLabel(schedule.status) }}
-                </el-tag>
-              </div>
-            </div>
+        <!-- avue-crud 主体 -->
+        <avue-crud
+          :option="crudOption"
+          :data="tableData"
+          :page.sync="page"
+          :loading="loading"
+          @on-load="onLoad"
+          @row-click="handleSelectSchedule"
+        >
+          <!-- 操作列插槽 -->
+          <template #menu="scope">
+            <el-link type="primary" size="small" @click.stop="handleViewMeeting(scope.row)">
+              查看会议详情
+            </el-link>
+            <el-divider direction="vertical"></el-divider>
+            <el-link
+              type="primary"
+              size="small"
+              @click.stop="handleEditMeeting(scope.row)"
+              v-if="scope.row.status === 'wait_start'"
+            >
+              修改会议信息
+            </el-link>
+            <el-divider direction="vertical" v-if="scope.row.status === 'wait_start'"></el-divider>
+            <el-link
+              type="primary"
+              size="small"
+              @click.stop="handleCancelMeeting(scope.row)"
+              v-if="scope.row.status === 'wait_start'"
+            >
+              取消会议
+            </el-link>
+            <el-divider direction="vertical" v-if="scope.row.status === 'wait_start'"></el-divider>
+            <el-link
+              type="danger"
+              size="small"
+              @click.stop="handleDeleteMeeting(scope.row)"
+            >
+              删除
+            </el-link>
+          </template>
+        </avue-crud>
+      </div>
 
-            <div class="card-body">
-              <div class="topic-item" v-for="topic in schedule.topics" :key="topic.id">
-                <div class="topic-info">
-                  <el-link type="primary" @click="handleViewTopic(topic.id)">
-                    {{ topic.title }}
-                  </el-link>
-                  <span class="topic-dept">{{ topic.department }}</span>
-                </div>
-                <span class="topic-status">{{ topic.status }}</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <span class="location">{{ schedule.location || '待定' }}</span>
-              <div class="card-actions">
-                <el-button type="primary" size="small" @click="handleEditSchedule(schedule.id)">
-                  编辑
-                </el-button>
-                <el-button type="danger" size="small" @click="handleDeleteSchedule(schedule.id)">
-                  删除
-                </el-button>
-              </div>
-            </div>
+      <!-- 右侧：议题详情 -->
+      <div class="schedule-detail-section" v-if="selectedSchedule">
+        <!-- 会议标题和操作 -->
+        <div class="detail-header">
+          <div class="title-block">
+            <span class="meeting-name">{{ selectedSchedule.meetingName }}</span>
+            <span class="meeting-time">{{ selectedSchedule.meetingTime }}</span>
           </div>
-
-          <!-- 空状态 -->
-          <div v-else class="empty-state">
-            <i class="el-icon-document-copy"></i>
-            <p>暂无议程安排</p>
+          <div class="action-block">
+            <span class="duration">{{ selectedSchedule.duration }}</span>
           </div>
         </div>
 
-        <!-- 分页 -->
-        <el-pagination
-          v-if="total > 0"
-          :current-page="page.currentPage"
-          :page-size="page.pageSize"
-          :total="total"
-          @current-change="handlePageChange"
-          @size-change="handleSizeChange"
-          :page-sizes="[5, 10, 15, 20]"
-          layout="total, sizes, prev, pager, next, jumper"
-          style="margin-top: 20px; text-align: right"
-        />
+        <!-- 议题列表 -->
+        <div class="topics-section">
+          <div class="section-title">议题列表</div>
+          <div class="topics-container">
+            <div
+              v-for="(topic, index) in selectedSchedule.topics"
+              :key="index"
+              class="topic-item"
+            >
+              <div class="topic-number">{{ index + 1 }}</div>
+              <div class="topic-content">
+                <div class="topic-title">{{ topic.title }}</div>
+                <div class="topic-meta">
+                  <span class="meta-item">胸外科 张三</span>
+                  <span class="meta-item">{{ topic.duration }}</span>
+                </div>
+              </div>
+              <div class="topic-actions">
+                <el-button type="text" size="small" @click="handlePreviewTopic(topic)">预览</el-button>
+                <el-button type="text" size="small" @click="handleEditTopic(topic)">编辑</el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 参会人员 -->
+        <div class="participants-section">
+          <div class="section-title">参会人员: {{ selectedSchedule.participants.length }}人</div>
+          <div class="participants-list">
+            <div v-for="participant in selectedSchedule.participants" :key="participant" class="participant-tag">
+              <i class="el-icon-user"></i>
+              {{ participant }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div class="empty-state" v-else>
+        <i class="el-icon-document"></i>
+        <p>请选择左侧议程查看详情</p>
       </div>
     </div>
-  </div>
+
+    <!-- 修改会议信息弹窗 -->
+    <meeting-dialog
+      v-model="meetingDialogVisible"
+      :meeting-data="selectedSchedule"
+    />
+  </basic-container>
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
+import MeetingDialog from './components/meeting-dialog.vue';
+import { scheduleOption } from '@/option/decision/schedule';
 import * as topicApi from '@/api/decision/topic';
 
 export default {
   name: 'TopicSchedule',
   components: {
-    DecisionBreadcrumb
+    DecisionBreadcrumb,
+    MeetingDialog
   },
   data() {
     return {
-      selectedDate: new Date(),
+      // 是否使用mock数据（开发调试用）
+      useMockData: true,
+      // 会议类型列表
+      meetingTypeList: [],
       filterForm: {
-        title: '',
-        status: '',
-        dateRange: null
+        meetingName: '',
+        meetingTime: null,
+        meetingType: ''
       },
-      schedules: [],
       page: {
         currentPage: 1,
-        pageSize: 10
+        pageSize: 10,
+        total: 0
       },
-      total: 0,
       loading: false,
-      // Mock schedule data
+      selectedSchedule: null,
+      tableData: [],
+      crudOption: scheduleOption(this),
+      meetingDialogVisible: false,
+      // Mock数据
       mockSchedules: [
         {
-          id: '1',
-          startTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 14, 0),
-          endTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate(), 16, 30),
-          status: 'pending',
-          location: '会议室A',
+          index: 1,
+          id: 'mock-1',
+          meetingName: '9.23院长办公会—议事',
+          meetingType: '院长办公会',
+          meetingForm: '线上',
+          participantCount: 6,
+          meetingTime: '2025-12-15 09:00 至 11:00',
+          duration: '120分钟',
+          status: 'wait_start',
+          agendaStatusDesc: '待开始',
+          applyUserName: '张三',
           topics: [
-            { id: '1', title: '医院绩效评估体系改革', department: '胸外科', status: '待审批' },
-            { id: '2', title: '新增医疗设备购置方案', department: '放射科', status: '待审批' }
-          ]
+            {
+              id: 1,
+              title: '汇报学生党支部资质资教学项',
+              department: '胸外科',
+              reporter: '张三',
+              duration: '15分钟'
+            },
+            {
+              id: 2,
+              title: '关于正式任命xxx为胸外科副主任',
+              department: '胸外科',
+              reporter: '李四',
+              duration: '20分钟'
+            }
+          ],
+          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八']
         },
         {
-          id: '2',
-          startTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 2, 10, 0),
-          endTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 2, 12, 0),
-          status: 'approved',
-          location: '会议室B',
-          topics: [
-            { id: '3', title: '护理人员培训计划', department: '护理部', status: '已通过' }
-          ]
-        },
-        {
-          id: '3',
-          startTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 5, 15, 0),
-          endTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 5, 17, 0),
+          index: 2,
+          id: 'mock-2',
+          meetingName: '党委会—重要议题讨论',
+          meetingType: '党委会',
+          meetingForm: '线下',
+          participantCount: 8,
+          meetingTime: '2025-12-16 14:00 至 16:30',
+          duration: '150分钟',
           status: 'ongoing',
-          location: '会议室C',
+          agendaStatusDesc: '进行中',
+          applyUserName: '李四',
           topics: [
-            { id: '4', title: '医院信息系统升级方案', department: '信息部', status: '进行中' },
-            { id: '5', title: '防疫应急预案制定', department: '感控部', status: '进行中' }
-          ]
+            {
+              id: 3,
+              title: '医院年度预算审批',
+              department: '财务部',
+              reporter: '王五',
+              duration: '30分钟'
+            },
+            {
+              id: 4,
+              title: '人事任免事项',
+              department: '人事部',
+              reporter: '赵六',
+              duration: '25分钟'
+            }
+          ],
+          participants: ['张三', '李四', '王五', '赵六', '孙七', '周八', '钱九', '赵十']
         },
         {
-          id: '4',
-          startTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 8, 9, 0),
-          endTime: new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate() + 8, 11, 30),
-          status: 'rejected',
-          location: '线上会议',
+          index: 3,
+          id: 'mock-3',
+          meetingName: '院长办公会—常规汇报',
+          meetingType: '院长办公会',
+          meetingForm: '线上',
+          participantCount: 5,
+          meetingTime: '2025-12-10 10:00 至 12:00',
+          duration: '120分钟',
+          status: 'ended',
+          agendaStatusDesc: '已结束',
+          applyUserName: '王五',
           topics: [
-            { id: '6', title: '药房改革方案', department: '药学部', status: '已拒绝' }
-          ]
+            {
+              id: 5,
+              title: '季度工作总结',
+              department: '行政部',
+              reporter: '孙七',
+              duration: '40分钟'
+            }
+          ],
+          participants: ['张三', '李四', '王五', '赵六', '孙七']
+        },
+        {
+          index: 4,
+          id: 'mock-4',
+          meetingName: '紧急会议—疫情防控',
+          meetingType: '院长办公会',
+          meetingForm: '线下',
+          participantCount: 4,
+          meetingTime: '2025-12-12 15:00 至 16:00',
+          duration: '60分钟',
+          status: 'cancelled',
+          agendaStatusDesc: '已取消',
+          applyUserName: '赵六',
+          topics: [
+            {
+              id: 6,
+              title: '疫情防控措施讨论',
+              department: '医务部',
+              reporter: '周八',
+              duration: '30分钟'
+            }
+          ],
+          participants: ['张三', '李四', '王五', '赵六']
         }
       ]
     };
   },
-  computed: {
-    ...mapGetters(['permission', 'userInfo'])
-  },
   mounted() {
-    this.loadSchedules();
+    this.fetchMeetingTypes();
+    this.onLoad();
   },
   methods: {
-    loadSchedules() {
+    // 获取会议类型列表
+    async fetchMeetingTypes() {
+      try {
+        const res = await topicApi.getAgendaType();
+        if (res.data && res.data.code === 200) {
+          this.meetingTypeList = res.data.data || [];
+        }
+      } catch (error) {
+        console.error('获取会议类型失败：', error);
+      }
+    },
+
+    onLoad() {
+      this.loadSchedules();
+    },
+
+    async loadSchedules() {
       this.loading = true;
       try {
-        // Use mock data for now
-        this.schedules = this.mockSchedules;
-        this.total = this.mockSchedules.length;
+        // 如果使用mock数据
+        if (this.useMockData) {
+          // 应用搜索过滤
+          let filtered = this.mockSchedules;
+
+          if (this.filterForm.meetingName) {
+            filtered = filtered.filter(s =>
+              s.meetingName.includes(this.filterForm.meetingName)
+            );
+          }
+
+          if (this.filterForm.meetingType) {
+            filtered = filtered.filter(s =>
+              s.meetingType === this.filterForm.meetingType
+            );
+          }
+
+          if (this.filterForm.meetingTime && this.filterForm.meetingTime.length === 2) {
+            const [startDate, endDate] = this.filterForm.meetingTime;
+            filtered = filtered.filter(s => {
+              const dateMatch = s.meetingTime.match(/(\d{4}-\d{2}-\d{2})/);
+              if (dateMatch) {
+                const meetingDate = new Date(dateMatch[1]);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                return meetingDate >= start && meetingDate <= end;
+              }
+              return false;
+            });
+          }
+
+          // 应用分页
+          const startIndex = (this.page.currentPage - 1) * this.page.pageSize;
+          this.tableData = filtered.slice(startIndex, startIndex + this.page.pageSize);
+          this.page.total = filtered.length;
+          this.loading = false;
+          return;
+        }
+
+        // 使用真实API
+        const requestData = {
+          current: this.page.currentPage,
+          size: this.page.pageSize
+        };
+
+        // 添加搜索条件
+        if (this.filterForm.meetingName) {
+          requestData.agendaName = this.filterForm.meetingName;
+        }
+
+        if (this.filterForm.meetingType) {
+          requestData.agendaType = this.filterForm.meetingType;
+        }
+
+        if (this.filterForm.meetingTime && this.filterForm.meetingTime.length === 2) {
+          requestData.startTimeStart = this.filterForm.meetingTime[0];
+          requestData.startTimeEnd = this.filterForm.meetingTime[1];
+        }
+
+        // 调用API
+        const res = await topicApi.getAgendaPage(requestData);
+
+        if (res.data && res.data.code === 0 && res.data.success) {
+          const apiData = res.data.data;
+          // 映射API返回的字段到表格数据
+          this.tableData = (apiData.records || []).map((item, index) => ({
+            index: (this.page.currentPage - 1) * this.page.pageSize + index + 1,
+            id: item.id,
+            meetingName: item.agendaName,
+            meetingType: item.meetingTypeDesc,
+            meetingForm: item.meetingFormDesc,
+            participantCount: item.attendeeCount,
+            meetingTime: this.formatMeetingTime(item.startTime, item.endTime),
+            duration: item.agendaDuration ? `${item.agendaDuration}分钟` : '-',
+            status: item.agendaStatus,
+            agendaStatusDesc: item.agendaStatusDesc,
+            applyUserName: item.applyUserName,
+            // 保留原始数据
+            _raw: item
+          }));
+          this.page.total = apiData.total || 0;
+        } else {
+          this.$message.error(res.data.msg || '加载议程列表失败');
+          this.tableData = [];
+          this.page.total = 0;
+        }
+      } catch (error) {
+        console.error('加载议程列表失败：', error);
+        this.$message.error('加载议程列表失败');
+        this.tableData = [];
+        this.page.total = 0;
       } finally {
         this.loading = false;
       }
     },
 
-    handleDateChange(date) {
-      this.page.currentPage = 1;
-      this.loadSchedules();
+    formatMeetingTime(startTime, endTime) {
+      if (!startTime) return '-';
+      const start = this.$dayjs(startTime).format('YYYY-MM-DD HH:mm');
+      const end = endTime ? this.$dayjs(endTime).format('HH:mm') : '';
+      return end ? `${start} 至 ${end}` : start;
     },
 
     handleSearch() {
       this.page.currentPage = 1;
-      // Filter by search form
-      let filtered = this.mockSchedules;
-
-      if (this.filterForm.title) {
-        filtered = filtered.filter(schedule =>
-          schedule.topics.some(topic => topic.title.includes(this.filterForm.title))
-        );
-      }
-
-      if (this.filterForm.status) {
-        filtered = filtered.filter(schedule => schedule.status === this.filterForm.status);
-      }
-
-      if (this.filterForm.dateRange && this.filterForm.dateRange.length === 2) {
-        const [start, end] = this.filterForm.dateRange;
-        filtered = filtered.filter(schedule => {
-          const scheduleDate = new Date(schedule.startTime);
-          return scheduleDate >= start && scheduleDate <= end;
-        });
-      }
-
-      this.schedules = filtered;
-      this.total = filtered.length;
+      this.loadSchedules();
     },
 
     handleReset() {
       this.filterForm = {
-        title: '',
-        status: '',
-        dateRange: null
+        meetingName: '',
+        meetingTime: null,
+        meetingType: ''
       };
       this.page.currentPage = 1;
       this.loadSchedules();
     },
 
-    handlePageChange(page) {
-      this.page.currentPage = page;
-      this.loadSchedules();
-    },
-
-    handleSizeChange(size) {
-      this.page.pageSize = size;
-      this.page.currentPage = 1;
-      this.loadSchedules();
-    },
-
-    formatDate(date) {
-      if (!date) return '-';
-      const d = new Date(date);
-      return d.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-    },
-
-    formatTime(date) {
-      if (!date) return '-';
-      const d = new Date(date);
-      return d.toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    },
-
-    getStatusLabel(status) {
-      const labels = {
-        'pending': '待审批',
-        'approved': '已通过',
-        'rejected': '已拒绝',
-        'ongoing': '进行中',
-        'ended': '已结束'
+    handleSelectSchedule(row) {
+      // 设置选中的议程
+      this.selectedSchedule = {
+        ...row,
+        // 如果API返回了议题列表，使用它；否则使用空数组
+        topics: row.topics || [],
+        // 如果API返回了参会人员，使用它；否则使用空数组
+        participants: row.participants || []
       };
-      return labels[status] || '-';
+
+      // TODO: 如果需要加载议程详情（包括议题列表和参会人员），在这里调用详情API
+      // this.loadAgendaDetail(row.id);
     },
 
-    getStatusType(status) {
-      const types = {
-        'pending': 'warning',
-        'approved': 'success',
-        'rejected': 'danger',
-        'ongoing': 'info',
-        'ended': ''
-      };
-      return types[status] || 'info';
+    handleViewMeeting(row) {
+      this.$message.info('查看会议详情功能开发中');
     },
 
-    handleViewTopic(topicId) {
-      this.$router.push(`/decision/topic/detail/${topicId}`);
+    handleEditMeeting(row) {
+      this.selectedSchedule = row;
+      this.meetingDialogVisible = true;
     },
 
-    handleAddSchedule() {
-      this.$message.info('新增议程功能开发中');
-    },
-
-    handleEditSchedule(scheduleId) {
-      this.$message.info('编辑议程功能开发中');
-    },
-
-    handleDeleteSchedule(scheduleId) {
-      this.$confirm('确定删除此议程吗？', '警告', {
+    handleCancelMeeting(row) {
+      this.$confirm('确定取消此会议吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        this.schedules = this.schedules.filter(s => s.id !== scheduleId);
-        this.total = this.schedules.length;
-        this.$message.success('删除成功');
+      }).then(async () => {
+        try {
+          const res = await topicApi.cancelAgenda(row.id);
+          if (res.data && res.data.success) {
+            this.$message.success('会议已取消');
+            this.selectedSchedule = null;
+            this.loadSchedules();
+          } else {
+            this.$message.error(res.data.msg || '取消会议失败');
+          }
+        } catch (error) {
+          console.error('取消会议失败：', error);
+          this.$message.error('取消会议失败');
+        }
       }).catch(() => {
         // User cancelled
       });
     },
 
-    handleExport() {
-      this.$message.info('导出功能开发中');
+    handleDeleteMeeting(row) {
+      this.$confirm('确定删除此会议吗？删除后将无法恢复', '警告', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(async () => {
+        try {
+          const res = await topicApi.deleteAgenda(row.id);
+          if (res.data && res.data.success) {
+            this.$message.success('会议已删除');
+            this.selectedSchedule = null;
+            this.loadSchedules();
+          } else {
+            this.$message.error(res.data.msg || '删除会议失败');
+          }
+        } catch (error) {
+          console.error('删除会议失败：', error);
+          this.$message.error('删除会议失败');
+        }
+      }).catch(() => {
+        // User cancelled
+      });
+    },
+
+    handlePreviewTopic(topic) {
+      this.$router.push(`/decision/topic/detail/${topic.id}`);
+    },
+
+    handleEditTopic(topic) {
+      this.$router.push(`/decision/topic/edit/${topic.id}`);
+    },
+
+    handlePrintSchedule() {
+      this.$message.info('打印议程功能开发中');
     }
   }
 };
 </script>
 
 <style scoped lang="scss">
-.schedule-page {
-  background: white;
-  border-radius: 6px;
-  padding: 24px;
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #dcdfe6;
 
-  .action-bar {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #dcdfe6;
+  .header-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #303133;
+  }
 
-    .el-button {
-      margin-right: 10px;
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.schedule-main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  height: calc(100vh - 300px);
+  min-height: 600px;
+
+  .schedule-table-section {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+
+    .filter-bar {
+      padding: 15px;
+      background: #f5f7fa;
+      border-bottom: 1px solid #ebeef5;
+
+      .filter-form {
+        margin: 0;
+
+        ::v-deep .el-form-item {
+          margin-bottom: 0;
+        }
+
+        .filter-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+
+          .el-button {
+            padding: 7px 15px;
+          }
+        }
+      }
+    }
+
+    ::v-deep .avue-crud {
+      flex: 1;
+      overflow-y: auto;
+
+      .avue-crud__body {
+        height: 100%;
+      }
+
+      .el-table {
+        border: none;
+
+        .el-table__header-wrapper {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+        }
+      }
     }
   }
 
-  .schedule-container {
-    display: grid;
-    grid-template-columns: 250px 1fr;
-    gap: 20px;
+  .schedule-detail-section {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 
-    .calendar-panel {
-      background: #f5f7fa;
-      border-radius: 6px;
+    .detail-header {
       padding: 15px;
+      background: #f5f7fa;
+      border-bottom: 1px solid #ebeef5;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
 
-      ::v-deep .el-input {
-        margin-bottom: 20px;
+      .title-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .meeting-name {
+          font-size: 13px;
+          font-weight: 600;
+          color: #303133;
+        }
+
+        .meeting-time {
+          font-size: 11px;
+          color: #909399;
+        }
       }
 
-      .legend {
-        margin-top: 20px;
+      .action-block {
+        text-align: right;
 
-        .legend-item {
+        .duration {
+          font-size: 11px;
+          color: #606266;
+        }
+      }
+    }
+
+    .topics-section {
+      padding: 12px;
+      border-bottom: 1px solid #ebeef5;
+      flex: 1;
+      overflow-y: auto;
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 10px;
+        padding-left: 8px;
+        border-left: 3px solid #409eff;
+      }
+
+      .topics-container {
+        .topic-item {
           display: flex;
-          align-items: center;
-          margin-bottom: 12px;
-          font-size: 13px;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 8px;
+          margin-bottom: 6px;
+          background: #fafafa;
+          border-radius: 3px;
+          font-size: 11px;
 
-          .legend-icon {
-            width: 12px;
-            height: 12px;
-            border-radius: 2px;
-            margin-right: 8px;
+          .topic-number {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            background: #e8f4fd;
+            color: #409eff;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+          }
+
+          .topic-content {
+            flex: 1;
+            min-width: 0;
+
+            .topic-title {
+              font-size: 11px;
+              color: #303133;
+              margin-bottom: 3px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+
+            .topic-meta {
+              display: flex;
+              gap: 6px;
+              color: #909399;
+
+              .meta-item {
+                font-size: 10px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+            }
+          }
+
+          .topic-actions {
+            flex-shrink: 0;
+            display: flex;
+            gap: 2px;
+
+            ::v-deep .el-link {
+              font-size: 10px;
+              padding: 0;
+            }
           }
         }
       }
     }
 
-    .schedule-list {
-      .filter-section {
-        background: #f5f7fa;
-        border-radius: 6px;
-        padding: 15px;
-        margin-bottom: 20px;
+    .participants-section {
+      padding: 12px;
 
-        .filter-form {
-          ::v-deep .el-form-item {
-            margin-bottom: 10px;
-          }
-
-          .filter-buttons {
-            text-align: left;
-
-            .el-button {
-              margin-right: 10px;
-            }
-          }
-        }
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 8px;
+        padding-left: 8px;
+        border-left: 3px solid #409eff;
       }
 
-      .schedule-cards {
-        .schedule-card {
-          border: 1px solid #dcdfe6;
-          border-radius: 6px;
-          margin-bottom: 15px;
+      .participants-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .participant-tag {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 4px 8px;
+          background: #f0f9ff;
+          border-radius: 3px;
+          font-size: 11px;
+          color: #409eff;
           overflow: hidden;
-          transition: all 0.3s;
-
-          &:hover {
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-          }
-
-          &.status-pending {
-            border-left: 4px solid #f0ad4e;
-          }
-
-          &.status-approved {
-            border-left: 4px solid #5cb85c;
-          }
-
-          &.status-rejected {
-            border-left: 4px solid #d9534f;
-          }
-
-          &.status-ongoing {
-            border-left: 4px solid #0275d8;
-          }
-
-          &.status-ended {
-            border-left: 4px solid #999;
-          }
-
-          .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #f9fafc;
-            border-bottom: 1px solid #ebeef5;
-
-            .schedule-title {
-              display: flex;
-              flex-direction: column;
-              gap: 5px;
-
-              .schedule-date {
-                font-size: 14px;
-                font-weight: 600;
-                color: #303133;
-              }
-
-              .schedule-time {
-                font-size: 12px;
-                color: #909399;
-              }
-            }
-
-            .status-badge {
-              ::v-deep .el-tag {
-                padding: 4px 12px;
-              }
-            }
-          }
-
-          .card-body {
-            padding: 15px;
-
-            .topic-item {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 10px;
-              background: white;
-              border-radius: 4px;
-              margin-bottom: 8px;
-              font-size: 13px;
-
-              &:last-child {
-                margin-bottom: 0;
-              }
-
-              .topic-info {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-
-                ::v-deep .el-link {
-                  flex: 1;
-                  font-size: 13px;
-                }
-
-                .topic-dept {
-                  color: #909399;
-                  white-space: nowrap;
-                }
-              }
-
-              .topic-status {
-                color: #606266;
-                white-space: nowrap;
-                margin-left: 10px;
-              }
-            }
-          }
-
-          .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 15px;
-            background: #f9fafc;
-            border-top: 1px solid #ebeef5;
-            font-size: 13px;
-
-            .location {
-              color: #606266;
-            }
-
-            .card-actions {
-              display: flex;
-              gap: 8px;
-
-              .el-button {
-                margin: 0;
-              }
-            }
-          }
-        }
-
-        .empty-state {
-          text-align: center;
-          padding: 60px 20px;
-          color: #909399;
+          text-overflow: ellipsis;
+          white-space: nowrap;
 
           i {
-            font-size: 48px;
-            color: #dcdfe6;
-            display: block;
-            margin-bottom: 15px;
-          }
-
-          p {
-            margin: 0;
+            flex-shrink: 0;
+            font-size: 10px;
           }
         }
       }
+    }
+  }
 
-      ::v-deep .el-pagination {
-        margin-top: 20px;
-        text-align: right;
-      }
+  .empty-state {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+
+    i {
+      font-size: 48px;
+      color: #dcdfe6;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 0;
+      color: #909399;
+      font-size: 13px;
     }
   }
 }
 
-@media (max-width: 768px) {
-  .schedule-page {
-    .schedule-container {
-      grid-template-columns: 1fr;
+@media (max-width: 1200px) {
+  .schedule-main {
+    grid-template-columns: 1fr;
+    height: auto;
 
-      .calendar-panel {
-        display: none;
-      }
+    .schedule-detail-section,
+    .empty-state {
+      grid-column: 1;
+      height: 400px;
+      margin-top: 20px;
     }
   }
 }

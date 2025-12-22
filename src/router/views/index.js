@@ -256,7 +256,17 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
+      },
+      {
+        path: 'topic/edit/:id',
+        name: '编辑议题',
+        meta: {
+          title: '编辑议题',
+          menu: false,
+          isAuth: false,
+        },
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
       },
       {
         path: 'topic/detail/:id',
@@ -266,7 +276,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/detail.vue'),
       },
       {
         path: 'topic/vote/:id',
@@ -307,7 +317,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/detail.vue'),
       },
       {
         path: 'task/my-tasks',
@@ -328,7 +338,7 @@ export default [
           menu: false,
           isAuth: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/task/participate.vue'),
       },
       {
         path: 'dashboard',
@@ -339,7 +349,7 @@ export default [
           isAuth: false,
           menu: false,
         },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/index.vue'),
+        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/dashboard.vue'),
       },
         ]
       }

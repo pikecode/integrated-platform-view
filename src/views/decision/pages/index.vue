@@ -3,202 +3,253 @@
     <!-- 面包屑导航 -->
     <decision-breadcrumb :breadcrumbs="['首页']" />
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="statistics-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon active">
-            <i class="el-icon-document"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">进行中的议题</div>
-            <div class="stat-value">{{ statistics.activeTopics || 0 }}</div>
-          </div>
-        </div>
+    <!-- 欢迎横幅 -->
+    <welcome-banner :user-name="userInfo?.name || 'xxx'" />
+
+    <!-- 快速入口 -->
+    <quick-entry
+      @topic-create="handleTopicCreate"
+      @task-create="handleTaskCreate"
+    />
+
+    <!-- 待办事项：议题和任务 -->
+    <el-row :gutter="20" class="pending-row">
+      <!-- 议题待办 -->
+      <el-col :span="12">
+        <pending-items
+          title="议题待办"
+          :badges="topicBadges"
+          :data="pendingTopics"
+          :columns="topicColumns"
+          action-label="去审批"
+          @view-all="goToTopics"
+          @item-click="handleTopicDetail"
+          @action="handleTopicApproval"
+        />
       </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon voting">
-            <i class="el-icon-question"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">投票中的议题</div>
-            <div class="stat-value">{{ statistics.votingTopics || 0 }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon pending">
-            <i class="el-icon-circle-check"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">待处理的任务</div>
-            <div class="stat-value">{{ statistics.pendingTasks || 0 }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <div class="stat-card">
-          <div class="stat-icon progress">
-            <i class="el-icon-s-management"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">进行中的任务</div>
-            <div class="stat-value">{{ statistics.progressTasks || 0 }}</div>
-          </div>
-        </div>
+
+      <!-- 任务待办 -->
+      <el-col :span="12">
+        <pending-items
+          title="任务待办"
+          :badges="taskBadges"
+          :data="pendingTasks"
+          :columns="taskColumns"
+          action-label="去审批"
+          @view-all="goToTasks"
+          @item-click="handleTaskDetail"
+          @action="handleTaskApproval"
+        />
       </el-col>
     </el-row>
 
-    <!-- 快速操作 -->
-    <el-row :gutter="20" class="quick-actions">
-      <el-col :span="24">
-        <div class="action-panel">
-          <h3>快速操作</h3>
-          <el-button type="primary" size="large" @click="goToTopics">
-            <i class="el-icon-plus"></i> 发起议题
-          </el-button>
-          <el-button type="success" size="large" @click="goToTasks">
-            <i class="el-icon-plus"></i> 创建任务
-          </el-button>
-          <el-button type="warning" size="large" @click="goToMyTasks">
-            <i class="el-icon-document-copy"></i> 我的任务
-          </el-button>
-        </div>
+    <!-- 活动动态 -->
+    <el-row :gutter="20" class="activity-row">
+      <!-- 相关议题动态 -->
+      <el-col :span="12">
+        <activity-log
+          title="相关议题动态"
+          :logs="topicLogs"
+        />
+      </el-col>
+
+      <!-- 相关任务动态 -->
+      <el-col :span="12">
+        <activity-log
+          title="相关任务动态"
+          :logs="taskLogs"
+        />
       </el-col>
     </el-row>
-
-    <!-- 最新议题 -->
-    <el-row :gutter="20" class="content-row">
-      <el-col :span="24">
-        <h2>最新议题</h2>
-        <el-empty v-if="recentTopics.length === 0" description="暂无议题" />
-        <el-row :gutter="20" v-else>
-          <el-col :xs="24" :sm="12" :md="8" v-for="topic in recentTopics" :key="topic.id">
-            <topic-card
-              :topic="topic"
-              @start-vote="handleStartVote"
-              @vote="handleVote"
-              @delete="handleDeleteTopic"
-            />
-          </el-col>
-        </el-row>
-      </el-col>
-    </el-row>
-
-    <!-- 我的任务 -->
-    <el-row :gutter="20" class="content-row">
-      <el-col :span="24">
-        <h2>我的任务</h2>
-        <el-empty v-if="myTasks.length === 0" description="暂无任务" />
-        <div v-else>
-          <task-item
-            v-for="task in myTasks"
-            :key="task.id"
-            :task="task"
-            @delete="handleDeleteTask"
-            @start="handleStartTask"
-            @complete="handleCompleteTask"
-          />
-        </div>
-      </el-col>
-    </el-row>
-
-    <!-- 投票对话框 -->
-    <el-dialog title="提交投票" v-model="voteDialogVisible" width="400px">
-      <el-radio-group v-model="voteForm.vote" size="large">
-        <el-radio label="agree">赞成</el-radio>
-        <el-radio label="disagree">反对</el-radio>
-        <el-radio label="abstain">弃权</el-radio>
-      </el-radio-group>
-      <el-input
-        v-model="voteForm.comment"
-        type="textarea"
-        placeholder="可选：添加投票意见"
-        rows="3"
-        style="margin-top: 15px"
-      />
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="voteDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitVote">提交</el-button>
-        </span>
-      </template>
-    </el-dialog>
   </basic-container>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
 import DecisionBreadcrumb from '../components/breadcrumb.vue';
-import TopicCard from '../components/topic-card/index.vue';
-import TaskItem from '../components/task-item/index.vue';
+import WelcomeBanner from '../components/welcome-banner/index.vue';
+import QuickEntry from '../components/quick-entry/index.vue';
+import PendingItems from '../components/pending-items/index.vue';
+import ActivityLog from '../components/activity-log/index.vue';
 import * as topicApi from '@/api/decision/topic';
-import * as taskApi from '@/api/decision/task';
-import topicMixin from '../mixins/topic';
-import taskMixin from '../mixins/task';
 
 export default {
   name: 'DecisionIndex',
   components: {
     DecisionBreadcrumb,
-    TopicCard,
-    TaskItem
+    WelcomeBanner,
+    QuickEntry,
+    PendingItems,
+    ActivityLog
   },
-  mixins: [topicMixin, taskMixin],
   data() {
     return {
-      statistics: {
-        activeTopics: 0,
-        votingTopics: 0,
-        pendingTasks: 0,
-        progressTasks: 0
-      },
-      recentTopics: [],
-      myTasks: [],
-      voteDialogVisible: false,
-      currentVotingTopicId: null,
-      voteForm: {
-        vote: 'agree',
-        comment: ''
-      },
+      pendingTopics: [
+        {
+          id: 1,
+          title: '汇报学生党支部资质资教学项',
+          department: '胸外科',
+          applyTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 2,
+          title: '汇报职工党党支部支持候选人名单',
+          department: '胸外科',
+          applyTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 3,
+          title: '汇报了成等16位中层干部用期满…',
+          department: '胸外科',
+          applyTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 4,
+          title: '关于正式任命xxx为胸外科副主任',
+          department: '胸外科',
+          applyTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 5,
+          title: '关于正式任命xxx为胸外科副主任',
+          department: '胸外科',
+          applyTime: '2025-08-08 12:12:12'
+        }
+      ],
+      pendingTasks: [
+        {
+          id: 101,
+          title: '汇报学生党支部贡献事项',
+          creator: '李四',
+          createTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 102,
+          title: '汇报教职工党党支部支持候选人名单',
+          creator: '张三',
+          createTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 103,
+          title: '汇报了成等中层干部用期满…',
+          creator: '张秋月',
+          createTime: '2025-08-08 12:12:12'
+        },
+        {
+          id: 104,
+          title: '关于正式任名xxx为胸外科副主任',
+          creator: '蔡朝',
+          createTime: '2025-08-08 12:12:12'
+        }
+      ],
+      topicLogs: [
+        {
+          userName: '张明明',
+          content: '【议题审批-审批点名称】张明明审批了（同意）....',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '李四',
+          content: '议题（xxxx）的【议题审批】已通过。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '张明月',
+          content: '议题（xxxx）的【录入会议结论审批】已通过。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '张明明',
+          content: '【申请上会审批-审批点名称】张明明审批了（拒绝）...',
+          status: 'reject',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '李四',
+          content: '议题（xxxx）的【录入会议结论审批】已通过。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        }
+      ],
+      taskLogs: [
+        {
+          userName: '张明明',
+          content: '张明明接收了任务（汇报学生党支部贡献事项）。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '李四',
+          content: '李四反馈了任务（汇报教职工党党支部支持候选人名单）。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        },
+        {
+          userName: '张秋月',
+          content: '张秋月接收了任务（汇报了成等中层干部用期满）。',
+          status: 'agree',
+          time: '2025-09-08 12:12:12'
+        }
+      ],
+      topicColumns: [
+        { prop: 'title', label: '议题名称', isLink: true },
+        { prop: 'department', label: '申报科室', width: '150' },
+        { prop: 'applyTime', label: '议题申请时间', width: '160' }
+      ],
+      taskColumns: [
+        { prop: 'title', label: '任务名称', isLink: true },
+        { prop: 'creator', label: '发起人', width: '120' },
+        { prop: 'createTime', label: '任务发起时间', width: '160' }
+      ],
       loading: true
     };
   },
   computed: {
-    ...mapGetters(['userInfo'])
+    ...mapGetters(['userInfo']),
+    topicBadges() {
+      return [
+        { label: '待审批', type: 'warning', count: 7 }
+      ];
+    },
+    taskBadges() {
+      return [
+        { label: '待审批', type: 'warning', count: 9 },
+        { label: '待接收', type: 'info', count: 2 },
+        { label: '待反馈', type: 'danger', count: 2 }
+      ];
+    }
   },
   mounted() {
     this.loadData();
   },
   methods: {
     async loadData() {
-      this.loading = true;
       try {
-        // 并发加载所有数据
-        const [topicsRes, tasksRes, statsRes] = await Promise.all([
-          topicApi.getList(1, 6, { status: 'active,voting' }),
-          taskApi.getMyTasks(1, 5, {}),
-          taskApi.getStatistics()
-        ]);
+        this.loading = true;
+        // 调用议题状态接口
+        const res = await topicApi.getTopicStatus();
+        console.log('议题状态统计数据：', res);
 
-        this.recentTopics = topicsRes.data?.records || [];
-        this.myTasks = tasksRes.data?.records || [];
-        this.statistics = statsRes.data || {};
+        // 这里可以根据接口返回的数据更新页面
+        // 例如：this.pendingTopics = res.data.topics;
+
       } catch (error) {
-        this.$message.error('加载数据失败');
+        console.error('获取议题状态失败：', error);
+        this.$message.error('获取数据失败');
       } finally {
         this.loading = false;
       }
     },
 
-    loadTopics() {
-      this.loadData();
+    handleTopicCreate() {
+      this.$router.push('/decision/topic/create');
     },
 
-    loadTasks() {
-      this.loadData();
+    handleTaskCreate() {
+      this.$router.push('/decision/task');
     },
 
     goToTopics() {
@@ -209,149 +260,31 @@ export default {
       this.$router.push('/decision/task');
     },
 
-    goToMyTasks() {
-      this.$router.push('/decision/task/my-tasks');
+    handleTopicDetail(row) {
+      this.$router.push(`/decision/topic/detail/${row.id}`);
     },
 
-    handleVote(topicId) {
-      this.currentVotingTopicId = topicId;
-      this.voteDialogVisible = true;
+    handleTaskDetail(row) {
+      this.$router.push(`/decision/task/detail/${row.id}`);
     },
 
-    async submitVote() {
-      if (!this.voteForm.vote) {
-        this.$message.warning('请选择投票意见');
-        return;
-      }
-      await this.submitVote(this.currentVotingTopicId, this.voteForm.vote);
-      this.voteDialogVisible = false;
-      this.voteForm = { vote: 'agree', comment: '' };
+    handleTopicApproval(row) {
+      this.$router.push(`/decision/topic/detail/${row.id}`);
     },
 
-    handleStartVote(topicId) {
-      this.startVote(topicId);
-    },
-
-    handleDeleteTopic(topicId) {
-      this.deleteTopic(topicId);
-    },
-
-    handleDeleteTask(taskId) {
-      this.deleteTask(taskId);
-    },
-
-    handleStartTask(taskId) {
-      // 实现任务开始逻辑
-      this.$message.info('任务已开始');
-      this.loadTasks();
-    },
-
-    handleCompleteTask(taskId) {
-      this.markTaskComplete(taskId);
+    handleTaskApproval(row) {
+      this.$router.push(`/decision/task/detail/${row.id}`);
     }
   }
 };
 </script>
 
 <style scoped lang="scss">
-.statistics-row {
+.pending-row {
   margin-bottom: 30px;
-
-  .stat-card {
-    display: flex;
-    align-items: center;
-    padding: 20px;
-    background: white;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s;
-
-    &:hover {
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
-    }
-
-    .stat-icon {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      color: white;
-      margin-right: 15px;
-
-      &.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      }
-
-      &.voting {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-      }
-
-      &.pending {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-      }
-
-      &.progress {
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-      }
-    }
-
-    .stat-content {
-      flex: 1;
-
-      .stat-label {
-        font-size: 12px;
-        color: #909399;
-        margin-bottom: 5px;
-      }
-
-      .stat-value {
-        font-size: 28px;
-        font-weight: 600;
-        color: #303133;
-      }
-    }
-  }
 }
 
-.quick-actions {
+.activity-row {
   margin-bottom: 30px;
-
-  .action-panel {
-    padding: 20px;
-    background: white;
-    border-radius: 6px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-
-    h3 {
-      margin: 0 0 15px 0;
-      color: #303133;
-    }
-
-    button {
-      margin-right: 10px;
-      margin-bottom: 10px;
-    }
-  }
-}
-
-.content-row {
-  margin-bottom: 30px;
-
-  h2 {
-    margin: 0 0 15px 0;
-    font-size: 18px;
-    color: #303133;
-    font-weight: 600;
-  }
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
 }
 </style>

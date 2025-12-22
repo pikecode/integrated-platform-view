@@ -80,7 +80,16 @@ export default {
     '$route.path': {
       handler(newPath) {
         // 根据路由更新菜单选中状态
-        const matchedPath = Object.keys(this.pathMap).find(key => newPath === key || newPath.startsWith(key + '/'));
+        // 先尝试精确匹配
+        if (this.pathMap[newPath]) {
+          this.activeMenu = newPath;
+          return;
+        }
+
+        // 按路径长度排序（从长到短），避免短路径先匹配
+        const sortedPaths = Object.keys(this.pathMap).sort((a, b) => b.length - a.length);
+        const matchedPath = sortedPaths.find(key => newPath.startsWith(key + '/'));
+
         if (matchedPath) {
           this.activeMenu = matchedPath;
         }
@@ -111,56 +120,90 @@ export default {
 
     .sidebar-menu {
       border: none;
-      padding: 12px 0;
+      padding: 0;
 
       ::v-deep .el-menu-item {
-        padding: 0 0 0 20px;
-        height: 40px;
-        line-height: 40px;
+        padding: 0 !important;
+        padding-left: 20px !important;
+        height: 36px;
+        line-height: 36px;
         color: #606266;
-        font-size: 14px;
+        font-size: 13px;
         border-left: 3px solid transparent;
         transition: all 0.3s;
+        background-color: transparent !important;
 
         &:hover {
-          background-color: #f5f7fa;
+          background-color: #f5f7fa !important;
           color: #667eea;
         }
 
         &.is-active {
           color: #667eea;
-          background-color: #f0f4ff;
+          background-color: #f0f4ff !important;
           border-left-color: #667eea;
         }
 
         i {
-          margin-right: 8px;
+          margin-right: 10px;
           font-size: 16px;
+          width: auto;
+          display: inline-block;
+        }
+
+        span {
+          vertical-align: middle;
         }
       }
 
       ::v-deep .el-sub-menu__title {
-        padding: 0 0 0 20px;
-        height: 40px;
-        line-height: 40px;
+        padding: 0 !important;
+        padding-left: 20px !important;
+        height: 36px;
+        line-height: 36px;
         color: #606266;
-        font-size: 14px;
+        font-size: 13px;
         border-left: 3px solid transparent;
+        background-color: transparent !important;
 
         &:hover {
-          background-color: #f5f7fa;
+          background-color: #f5f7fa !important;
           color: #667eea;
         }
 
         i {
-          margin-right: 8px;
+          margin-right: 10px;
           font-size: 16px;
+          width: auto;
+          display: inline-block;
+        }
+
+        span {
+          vertical-align: middle;
         }
       }
 
       ::v-deep .el-sub-menu.is-active > .el-sub-menu__title {
         color: #667eea !important;
         border-left-color: #667eea;
+        background-color: transparent !important;
+      }
+
+      ::v-deep .el-menu--inline {
+        background-color: #fafbfc;
+
+        .el-menu-item {
+          padding-left: 40px !important;
+          background-color: transparent !important;
+
+          &:hover {
+            background-color: #f0f4ff !important;
+          }
+
+          &.is-active {
+            background-color: #f0f4ff !important;
+          }
+        }
       }
     }
   }

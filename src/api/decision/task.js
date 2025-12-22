@@ -161,3 +161,50 @@ export const updateProgress = (taskId, progress) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 获取任务列表（分页）- 新API
+ */
+export const getTaskPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/publish/v1/page',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取任务详情 - 新API
+ */
+export const getTaskDetail = (taskId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/task/publish/v1/detail/${taskId}`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取待反馈任务列表（我参与的）
+ */
+export const getFeedbackTaskPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/page/feedback',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取已反馈任务列表（我参与的）
+ */
+export const getFeedbackDoneTaskPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/page/feedbackdone',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};

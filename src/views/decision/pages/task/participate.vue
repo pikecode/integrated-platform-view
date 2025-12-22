@@ -1,7 +1,15 @@
 <template>
   <basic-container>
     <!-- 面包屑导航 -->
-    <decision-breadcrumb :breadcrumbs="['任务管理', '我发布的']" />
+    <decision-breadcrumb :breadcrumbs="['任务管理', '我参与的']" />
+
+    <!-- 任务状态Tabs -->
+    <el-tabs v-model="activeTab" @tab-click="handleTabChange" class="task-tabs">
+      <el-tab-pane label="待反馈" name="pending_feedback" />
+      <el-tab-pane label="待审批" name="pending_review" />
+      <el-tab-pane label="已反馈" name="feedbacked" />
+      <el-tab-pane label="已审批" name="reviewed" />
+    </el-tabs>
 
     <!-- 搜索表单 -->
     <div class="search-form-container">
@@ -35,24 +43,19 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
-            <el-form-item label="任务状态:">
-              <el-select
-                v-model="searchParams.status"
-                placeholder="请选择"
+          <!-- 待反馈 tab 显示执行人 -->
+          <el-col v-if="activeTab === 'pending_feedback'" :span="6">
+            <el-form-item label="执行人:">
+              <el-input
+                v-model="searchParams.executor"
+                placeholder="请输入执行人"
                 clearable
-                style="width: 100%"
-              >
-                <el-option label="进行中" value="in_progress" />
-                <el-option label="已撤回" value="withdrawn" />
-                <el-option label="待审批" value="pending" />
-                <el-option label="已拒绝" value="rejected" />
-                <el-option label="已完成" value="completed" />
-              </el-select>
+              />
             </el-form-item>
           </el-col>
 
-          <el-col :span="6">
+          <!-- 其他 tab 显示任务来源 -->
+          <el-col v-if="activeTab !== 'pending_feedback'" :span="6">
             <el-form-item label="任务来源:">
               <el-select
                 v-model="searchParams.source"
@@ -66,44 +69,102 @@
               </el-select>
             </el-form-item>
           </el-col>
-        </el-row>
 
-        <!-- 高级搜索选项（展开时显示） -->
-        <el-row v-if="showMoreSearch" :gutter="20" class="more-search-row">
-          <el-col :span="8">
-            <el-form-item label="执行人:">
-              <el-input
-                v-model="searchParams.executor"
-                placeholder="请输入执行人"
-                clearable
-              />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="8">
-            <el-form-item label="配合科室:">
+          <!-- 待反馈 tab 显示任务来源 -->
+          <el-col v-if="activeTab === 'pending_feedback'" :span="6">
+            <el-form-item label="任务来源:">
               <el-select
-                v-model="searchParams.cooperateDept"
+                v-model="searchParams.source"
                 placeholder="请选择"
                 clearable
                 style="width: 100%"
               >
-                <el-option label="胸外科" value="dept1" />
-                <el-option label="心内科" value="dept2" />
-                <el-option label="神经外科" value="dept3" />
+                <el-option label="系统生成" value="system" />
+                <el-option label="手动创建" value="manual" />
+                <el-option label="导入" value="import" />
               </el-select>
             </el-form-item>
           </el-col>
 
-          <el-col :span="8">
-            <el-form-item label="配合人:">
+          <!-- 其他 tab 显示任务内容 -->
+          <el-col v-if="activeTab !== 'pending_feedback'" :span="6">
+            <el-form-item label="任务内容:">
               <el-input
-                v-model="searchParams.cooperatePerson"
-                placeholder="请输入配合人"
+                v-model="searchParams.content"
+                placeholder="请输入任务内容"
                 clearable
               />
             </el-form-item>
           </el-col>
+        </el-row>
+
+        <!-- 高级搜索选项（展开时显示） -->
+        <el-row v-if="showMoreSearch" :gutter="20" class="more-search-row">
+          <!-- 待反馈 tab 的更多条件 -->
+          <template v-if="activeTab === 'pending_feedback'">
+            <el-col :span="8">
+              <el-form-item label="配合科室:">
+                <el-select
+                  v-model="searchParams.cooperateDept"
+                  placeholder="请选择"
+                  clearable
+                  style="width: 100%"
+                >
+                  <el-option label="胸外科" value="dept1" />
+                  <el-option label="心内科" value="dept2" />
+                  <el-option label="神经外科" value="dept3" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="8">
+              <el-form-item label="配合人:">
+                <el-input
+                  v-model="searchParams.cooperatePerson"
+                  placeholder="请输入配合人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+          </template>
+
+          <!-- 其他 tab 的更多条件 -->
+          <template v-else>
+            <el-col :span="6">
+              <el-form-item label="配合科室:">
+                <el-select
+                  v-model="searchParams.cooperateDept"
+                  placeholder="请选择"
+                  clearable
+                  style="width: 100%"
+                >
+                  <el-option label="胸外科" value="dept1" />
+                  <el-option label="心内科" value="dept2" />
+                  <el-option label="神经外科" value="dept3" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="6">
+              <el-form-item label="执行人:">
+                <el-input
+                  v-model="searchParams.executor"
+                  placeholder="请输入执行人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="6">
+              <el-form-item label="配合人:">
+                <el-input
+                  v-model="searchParams.cooperatePerson"
+                  placeholder="请输入配合人"
+                  clearable
+                />
+              </el-form-item>
+            </el-col>
+          </template>
         </el-row>
 
         <!-- 按钮区域 -->
@@ -136,56 +197,28 @@
       :table-loading="loading"
       @on-load="onLoad"
     >
-      <!-- 工具栏 - 发起任务按钮 -->
-      <template #menu-left>
-        <el-button
-          type="primary"
-          icon="el-icon-plus"
-          @click="handleCreateTask"
-        >
-          发起任务
-        </el-button>
-      </template>
-
       <!-- 任务名称列 -->
-      <template #taskName="{ row }">
+      <template #title="{ row }">
         <el-link
           type="primary"
           @click="handleViewDetail(row.id)"
         >
-          {{ row.taskName }}
+          {{ row.title }}
         </el-link>
       </template>
 
       <!-- 任务状态列 -->
-      <template #taskStatusName="{ row }">
-        <status-badge :status="row.taskStatus" type="task" />
+      <template #status="{ row }">
+        <status-badge :status="row.status" type="task" />
       </template>
 
-      <!-- 操作列 -->
+      <!-- 操作列 - 只显示查看详情和打印 -->
       <template #menu="{ row }">
         <el-button type="text" size="small" @click="handlePrint(row)">
           打印
         </el-button>
         <el-button type="text" size="small" @click="handleViewDetail(row.id)">
           查看详情
-        </el-button>
-        <el-button
-          v-if="canRestart(row)"
-          type="text"
-          size="small"
-          @click="handleRestart(row)"
-        >
-          重新发起
-        </el-button>
-        <el-button
-          v-if="canDelete(row)"
-          type="text"
-          size="small"
-          style="color: #f56c6c"
-          @click="handleDelete(row)"
-        >
-          删除
         </el-button>
       </template>
     </avue-crud>
@@ -200,7 +233,7 @@ import StatusBadge from '../../components/status-badge/index.vue';
 import * as taskApi from '@/api/decision/task';
 
 export default {
-  name: 'TaskManagement',
+  name: 'TaskParticipate',
   components: {
     DecisionBreadcrumb,
     StatusBadge
@@ -217,6 +250,7 @@ export default {
       loading: true,
       viewMode: 'list',
       showMoreSearch: false,
+      activeTab: 'pending_feedback',
       searchParams: {
         title: '',
         departments: [],
@@ -225,90 +259,9 @@ export default {
         executor: '',
         cooperateDept: '',
         cooperatePerson: '',
+        content: '',
         createTimeRange: null
-      },
-      mockTasks: [
-        {
-          id: 1,
-          title: '汇报学生党支部资质资教学项',
-          status: 'in_progress',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
-          countdown: '3天20小时',
-          department: 'dept1',
-          assignee: '张明明',
-          cooperateDept: 'dept2',
-          cooperatePerson: '李五',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'system'
-        },
-        {
-          id: 2,
-          title: '关于正式任命xxx为胸外科副主任',
-          status: 'withdrawn',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
-          countdown: '/',
-          department: 'dept1',
-          assignee: '张三',
-          cooperateDept: 'dept3',
-          cooperatePerson: '王六',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'manual'
-        },
-        {
-          id: 3,
-          title: '汇报学生党支部资质资教学项',
-          status: 'pending',
-          currentNode: 'node1',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
-          countdown: '/',
-          department: 'dept2',
-          assignee: '王五',
-          cooperateDept: 'dept1',
-          cooperatePerson: '张三',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'system'
-        },
-        {
-          id: 4,
-          title: '关于正式任命xxx为胸外科副主任',
-          status: 'rejected',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
-          countdown: '3天20小时',
-          department: 'dept1',
-          assignee: '张三',
-          cooperateDept: 'dept2',
-          cooperatePerson: '赵七',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'import'
-        },
-        {
-          id: 5,
-          title: '关于正式任命xxx为胸外科副主任',
-          status: 'completed',
-          currentNode: '/',
-          content: '关于口腔医学中心马长相担申请加入九三学社事宜.',
-          dueDate: '2025-08-08 12:00',
-          countdown: '/',
-          department: 'dept3',
-          assignee: '赵六',
-          cooperateDept: 'dept1',
-          cooperatePerson: '李二',
-          createdAt: '2025-08-01 10:00',
-          creatorName: '李四',
-          source: 'system'
-        }
-      ]
+      }
     };
   },
   computed: {
@@ -321,6 +274,12 @@ export default {
     this.onLoad(this.page);
   },
   methods: {
+    handleTabChange() {
+      // 切换Tab时重置搜索条件和分页
+      this.page.currentPage = 1;
+      this.onLoad(this.page);
+    },
+
     async onLoad(page, params = {}) {
       this.loading = true;
       try {
@@ -330,17 +289,17 @@ export default {
           size: page.pageSize
         };
 
-        // 添加搜索条件（根据实际API参数调整）
+        // 添加搜索条件
         if (this.searchParams.title) {
           requestData.taskName = this.searchParams.title;
         }
 
-        if (this.searchParams.status) {
-          requestData.taskStatus = this.searchParams.status;
-        }
-
         if (this.searchParams.departments && this.searchParams.departments.length > 0) {
           requestData.executeDeptIds = this.searchParams.departments;
+        }
+
+        if (this.searchParams.status) {
+          requestData.taskStatus = this.searchParams.status;
         }
 
         if (this.searchParams.source) {
@@ -359,13 +318,24 @@ export default {
           requestData.cooperatePersonName = this.searchParams.cooperatePerson;
         }
 
+        if (this.searchParams.content) {
+          requestData.taskContent = this.searchParams.content;
+        }
+
         if (this.searchParams.createTimeRange && this.searchParams.createTimeRange.length === 2) {
           requestData.createTimeStart = this.$dayjs(this.searchParams.createTimeRange[0]).format('YYYY-MM-DD');
           requestData.createTimeEnd = this.$dayjs(this.searchParams.createTimeRange[1]).format('YYYY-MM-DD');
         }
 
-        // 调用API
-        const res = await taskApi.getTaskPage(requestData);
+        // 根据activeTab调用不同的API
+        let res;
+        if (this.activeTab === 'feedbacked') {
+          // 已反馈 - 使用 feedbackdone 接口
+          res = await taskApi.getFeedbackDoneTaskPage(requestData);
+        } else {
+          // 待反馈、待审批、已审批 - 都使用 feedback 接口
+          res = await taskApi.getFeedbackTaskPage(requestData);
+        }
 
         if (res.data && res.data.code === 200) {
           this.data = res.data.data.records || [];
@@ -399,21 +369,10 @@ export default {
         executor: '',
         cooperateDept: '',
         cooperatePerson: '',
+        content: '',
         createTimeRange: null
       };
       this.handleSearch();
-    },
-
-    handleCreateTask() {
-      this.$router.push('/decision/task/create');
-    },
-
-    handleRestart(row) {
-      // 打开创建对话框，预填充数据
-      this.$router.push({
-        path: '/decision/task/create',
-        query: { restartFrom: row.id }
-      });
     },
 
     handlePrint(row) {
@@ -422,35 +381,26 @@ export default {
 
     handleViewDetail(id) {
       this.$router.push(`/decision/task/detail/${id}`);
-    },
-
-    handleDelete(row) {
-      this.$confirm('确定删除此任务吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        // 从模拟数据中删除
-        this.mockTasks = this.mockTasks.filter(t => t.id !== row.id);
-        this.$message.success('删除成功');
-        this.onLoad(this.page);
-      }).catch(() => {});
-    },
-
-    canRestart(row) {
-      // 使用API返回的canRecall标志
-      return row.canRecall === true;
-    },
-
-    canDelete(row) {
-      // 使用API返回的canDel标志
-      return row.canDel === true;
     }
   }
 };
 </script>
 
 <style scoped lang="scss">
+.task-tabs {
+  margin-bottom: 20px;
+  background: white;
+  padding: 0 16px;
+
+  ::v-deep .el-tabs__nav {
+    border-bottom: none;
+  }
+
+  ::v-deep .el-tabs__active-bar {
+    background-color: #409eff;
+  }
+}
+
 .search-form-container {
   background: #f9fafb;
   border-radius: 4px;
