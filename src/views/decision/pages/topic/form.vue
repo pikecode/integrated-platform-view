@@ -24,7 +24,7 @@
 
 <script>
 import { topicFormOption } from '@/option/decision/topic-form';
-import { getDeptList, getDeptUsers, getAgendaType, createTopic, updateTopic } from '@/api/decision/topic';
+import { getDeptList, getDeptUsers, getAgendaType, createTopic, updateTopic, storageTopic } from '@/api/decision/topic';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 
 export default {
@@ -235,12 +235,26 @@ export default {
     },
 
     handleSave() {
-      // Save as draft
-      this.$refs.form.validate((valid) => {
-        if (valid) {
-          this.saveOrUpdate({ ...this.formData, status: 'draft' });
-        }
-      });
+      // 暂存（不需要验证所有必填字段）
+      const apiData = this.transformFormDataToAPI(this.formData);
+
+      this.submitting = true;
+      storageTopic(apiData)
+        .then(res => {
+          if (res.data && res.data.success) {
+            this.$message.success('暂存成功');
+            this.$router.push('/decision/topic/my');
+          } else {
+            this.$message.error(res.data?.msg || '暂存失败');
+          }
+        })
+        .catch(err => {
+          console.error('暂存议题失败:', err);
+          this.$message.error('暂存失败，请重试');
+        })
+        .finally(() => {
+          this.submitting = false;
+        });
     },
 
     handleSubmit() {

@@ -256,6 +256,18 @@ export const updateTopic = data => {
 };
 
 /**
+ * 暂存议题（表单使用）
+ */
+export const storageTopic = data => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/storage/create',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
  * 获取议题状态统计
  */
 export const getTopicStatus = () => {

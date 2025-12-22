@@ -46,6 +46,8 @@ export const topicFormOption = {
   dialogWidth: 1200,
   dialogClickModal: false,
   labelWidth: 140,
+  submitBtn: false,
+  emptyBtn: false,
   group: [
     {
       icon: 'el-icon-document',
