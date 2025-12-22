@@ -89,9 +89,13 @@ export const topicFormOption = {
         {
           label: '汇报人',
           prop: 'reporter',
-          type: 'input',
+          type: 'select',
           span: 12,
-          placeholder: '请输入汇报人'
+          placeholder: '请选择汇报人',
+          dicData: [],
+          rules: [
+            { required: true, message: '请选择汇报人', trigger: 'change' }
+          ]
         },
         {
           label: '汇报时长',
@@ -105,11 +109,15 @@ export const topicFormOption = {
           value: 30
         },
         {
-          label: '科室分管领导号',
+          label: '科室分管领导',
           prop: 'leader',
-          type: 'input',
+          type: 'select',
           span: 12,
-          placeholder: '请输入科室分管领导号'
+          placeholder: '请选择科室分管领导',
+          dicData: [],
+          rules: [
+            { required: true, message: '请选择科室分管领导', trigger: 'change' }
+          ]
         },
         {
           label: '议题内容摘要',
@@ -244,6 +252,18 @@ export const topicFormOption = {
           ]
         },
         {
+          label: '舆情应对措施',
+          prop: 'publicOpinionMeasures',
+          type: 'textarea',
+          span: 24,
+          rows: 4,
+          placeholder: '请输入舆情应对措施',
+          display: false,
+          rules: [
+            { required: true, message: '请输入舆情应对措施', trigger: 'blur' }
+          ]
+        },
+        {
           label: '风险应对措施',
           prop: 'riskMeasures',
           type: 'textarea',
@@ -276,7 +296,10 @@ export const topicFormOption = {
           span: 12,
           format: 'YYYY-MM-DD',
           valueFormat: 'YYYY-MM-DD',
-          placeholder: '选择到某天'
+          placeholder: '选择到某天',
+          rules: [
+            { required: true, message: '请选择期望汇报时间', trigger: 'change' }
+          ]
         }
       ]
     }

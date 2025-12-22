@@ -235,14 +235,24 @@ export const getTopicDetail = (topicId) => {
  * 创建议题（表单使用）
  */
 export const createTopic = data => {
-  return add(data);
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/create',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
 };
 
 /**
  * 更新议题（表单使用）
  */
 export const updateTopic = data => {
-  return update(data);
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/update',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
 };
 
 /**

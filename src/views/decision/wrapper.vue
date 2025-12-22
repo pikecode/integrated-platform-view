@@ -69,6 +69,8 @@ export default {
         '/decision/index': '/decision/index',
         '/decision/topic': '/decision/topic',
         '/decision/topic/my': '/decision/topic/my',
+        '/decision/topic/create': '/decision/topic/my',  // 新建议题页面高亮"我发布的"
+        '/decision/topic/edit': '/decision/topic/my',    // 编辑议题页面高亮"我发布的"
         '/decision/topic/schedule': '/decision/topic/schedule',
         '/decision/task': '/decision/task',
         '/decision/task/participate': '/decision/task/participate',

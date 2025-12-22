@@ -24,7 +24,7 @@
 
 <script>
 import { topicFormOption } from '@/option/decision/topic-form';
-import { getDeptList, getDeptUsers, getAgendaType, saveTopicData } from '@/api/decision/topic';
+import { getDeptList, getDeptUsers, getAgendaType, createTopic, updateTopic } from '@/api/decision/topic';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 
 export default {
@@ -80,7 +80,8 @@ export default {
     },
 
     'formData.hasRisk'(val) {
-      // Show/hide risk measures field
+      // Show/hide public opinion measures and risk measures fields
+      this.setGroupFieldDisplay('group4', 'publicOpinionMeasures', val === '是');
       this.setGroupFieldDisplay('group4', 'riskMeasures', val === '是');
     },
 
@@ -182,6 +183,7 @@ export default {
         collaborationLeaders: '',
         collaborationDirectors: [],
         hasRisk: '否',
+        publicOpinionMeasures: '',
         riskMeasures: '',
         meetingType: '',
         expectedTime: ''
@@ -208,6 +210,7 @@ export default {
           collaborationLeaders: '李四, 王五',
           collaborationDirectors: [],
           hasRisk: '否',
+          publicOpinionMeasures: '',
           riskMeasures: '',
           meetingType: '院长办公会',
           expectedTime: '2024-12-20',
@@ -255,12 +258,15 @@ export default {
       // 将表单数据转换为 API 需要的格式
       const apiData = this.transformFormDataToAPI(data);
 
+      // 根据编辑模式选择不同的 API
+      const apiCall = this.isEdit ? updateTopic(apiData) : createTopic(apiData);
+
       // 调用 API 保存议题
-      saveTopicData(apiData)
+      apiCall
         .then(res => {
           if (res.data && res.data.success) {
             this.$message.success(this.isEdit ? '更新成功' : '创建成功');
-            this.$router.push('/decision/topic');
+            this.$router.push('/decision/topic/my');
           } else {
             this.$message.error(res.data?.msg || '保存失败');
           }
@@ -277,13 +283,93 @@ export default {
     transformFormDataToAPI(formData) {
       // 获取申报科室信息
       const deptInfo = this.deptInfoCache[formData.department] || {};
+
       // 获取申报科室主任信息
-      const directorInfo = this.deptDirectorCache[`user_${formData.deptDirector}`] || {};
+      let directorInfo = this.deptDirectorCache[`user_${formData.deptDirector}`] || {};
+      if (!directorInfo.name && formData.deptDirector) {
+        // 如果缓存中没有，从 dicData 中查找
+        const deptGroup = this.formOption.group.find(g => g.prop === 'group1');
+        if (deptGroup) {
+          const directorField = deptGroup.column.find(c => c.prop === 'deptDirector');
+          if (directorField && directorField.dicData) {
+            const found = directorField.dicData.find(d => d.value === formData.deptDirector);
+            if (found) {
+              directorInfo = { id: formData.deptDirector, name: found.label };
+            }
+          }
+        }
+      }
+
+      // 获取申报科室分管领导信息（与主任使用相同的数据源）
+      let leaderInfo = this.deptDirectorCache[`user_${formData.leader}`] || {};
+      if (!leaderInfo.name && formData.leader) {
+        const deptGroup = this.formOption.group.find(g => g.prop === 'group1');
+        if (deptGroup) {
+          const leaderField = deptGroup.column.find(c => c.prop === 'leader');
+          if (leaderField && leaderField.dicData) {
+            const found = leaderField.dicData.find(d => d.value === formData.leader);
+            if (found) {
+              leaderInfo = { id: formData.leader, name: found.label };
+            }
+          }
+        }
+      }
+
+      // 获取汇报人信息（与主任使用相同的数据源）
+      let reporterInfo = this.deptDirectorCache[`user_${formData.reporter}`] || {};
+      if (!reporterInfo.name && formData.reporter) {
+        const deptGroup = this.formOption.group.find(g => g.prop === 'group1');
+        if (deptGroup) {
+          const reporterField = deptGroup.column.find(c => c.prop === 'reporter');
+          if (reporterField && reporterField.dicData) {
+            const found = reporterField.dicData.find(d => d.value === formData.reporter);
+            if (found) {
+              reporterInfo = { id: formData.reporter, name: found.label };
+            }
+          }
+        }
+      }
 
       // 获取协同科室信息
       const collaborationDeptId = formData.collaborationDepts?.[0] || '';
       const collaborationDeptInfo = this.deptInfoCache[collaborationDeptId] || {};
-      const collaborationDirectorInfo = this.deptDirectorCache[`user_${formData.collaborationLeaders}`] || {};
+
+      // 获取协同科室主任信息
+      let collaborationDirectorInfo = this.deptDirectorCache[`user_${formData.collaborationLeaders}`] || {};
+
+      // 如果缓存中没有，从 dicData 中查找
+      if (!collaborationDirectorInfo.name && formData.collaborationLeaders) {
+        const group4 = this.formOption.group.find(g => g.prop === 'group4');
+        if (group4) {
+          const directorField = group4.column.find(c => c.prop === 'collaborationLeaders');
+          if (directorField && directorField.dicData) {
+            const found = directorField.dicData.find(d => d.value === formData.collaborationLeaders);
+            if (found) {
+              collaborationDirectorInfo = { id: formData.collaborationLeaders, name: found.label };
+            }
+          }
+        }
+      }
+
+      // 获取协同科室分管领导信息（可能是多个，取第一个）
+      let collaborationLeaderInfo = {};
+      if (formData.collaborationDirectors && formData.collaborationDirectors.length > 0) {
+        collaborationLeaderInfo = this.deptDirectorCache[`user_${formData.collaborationDirectors[0]}`] || {};
+
+        // 如果缓存中没有，从 dicData 中查找
+        if (!collaborationLeaderInfo.name) {
+          const group4 = this.formOption.group.find(g => g.prop === 'group4');
+          if (group4) {
+            const leaderField = group4.column.find(c => c.prop === 'collaborationDirectors');
+            if (leaderField && leaderField.dicData) {
+              const found = leaderField.dicData.find(d => d.value === formData.collaborationDirectors[0]);
+              if (found) {
+                collaborationLeaderInfo = { id: formData.collaborationDirectors[0], name: found.label };
+              }
+            }
+          }
+        }
+      }
 
       // 将是否值转换为 0/1
       const isThreeMajor = formData.isImportant === '是' ? '1' : '0';
@@ -299,20 +385,12 @@ export default {
         applyDeptName: deptInfo.name || '',
         applyDeptDirectorId: formData.deptDirector,
         applyDeptDirectorName: directorInfo.name || '',
-        applyDeptLeaderId: '',  // leader 是文本输入，暂时用空值
-        applyDeptLeaderName: formData.leader || '',
-
-        // 协同科室
-        cooperateDeptId: collaborationDeptId,
-        cooperateDeptName: collaborationDeptInfo.name || '',
-        cooperateDeptDirectorId: formData.collaborationLeaders,
-        cooperateDeptDirectorName: collaborationDirectorInfo.name || '',
-        cooperateDeptLeaderId: '',  // collaborationDirectors 是多选，取第一个
-        cooperateDeptLeaderName: formData.collaborationDirectors?.[0] || '',
+        applyDeptLeaderId: formData.leader || '',  // 科室分管领导ID
+        applyDeptLeaderName: leaderInfo.name || '',  // 科室分管领导名称
 
         // 其他信息
-        reporterId: '',  // reporter 是文本输入，需要转换
-        reporterName: formData.reporter || '',
+        reporterId: formData.reporter || '',  // 汇报人ID
+        reporterName: reporterInfo.name || '',  // 汇报人名称
         reportDuration: formData.duration || 0,
 
         // 内容信息
@@ -322,6 +400,7 @@ export default {
         // 特殊信息
         isThreeMajor: isThreeMajor,
         isPublicOpinion: isPublicOpinion,
+        publicOpinionMeasure: formData.publicOpinionMeasures || '',
         riskMeasure: formData.riskMeasures || '',
 
         // 会议信息
@@ -329,11 +408,23 @@ export default {
         expectReportDate: formData.expectedTime || '',
 
         // 附件
-        attachments: formData.attachments || [],
-
-        // 编辑模式下需要提供 ID
-        id: this.topicId || ''
+        attachments: formData.attachments || []
       };
+
+      // 编辑模式下需要提供 ID
+      if (this.isEdit && this.topicId) {
+        apiData.id = this.topicId;
+      }
+
+      // 只有当存在协同科室时，才包含协同科室相关字段
+      if (collaborationDeptId) {
+        apiData.cooperateDeptId = collaborationDeptId;
+        apiData.cooperateDeptName = collaborationDeptInfo.name || '';
+        apiData.cooperateDeptDirectorId = formData.collaborationLeaders || '';
+        apiData.cooperateDeptDirectorName = collaborationDirectorInfo.name || '';
+        apiData.cooperateDeptLeaderId = formData.collaborationDirectors?.[0] || '';  // 分管领导ID
+        apiData.cooperateDeptLeaderName = collaborationLeaderInfo.name || '';  // 分管领导名称
+      }
 
       return apiData;
     },
@@ -393,14 +484,23 @@ export default {
     },
 
     updateCollaborationDeptField(directorData) {
-      // 更新 group4 中的协同科室主任字段
+      // 更新 group4 中的协同科室主任字段和分管领导字段
       const group4 = this.formOption.group.find(g => g.prop === 'group4');
       if (group4) {
+        // 更新协同科室主任字段
         const leaderField = group4.column.find(c => c.prop === 'collaborationLeaders');
         if (leaderField) {
           leaderField.dicData = directorData;
           // 清空之前选中的主任
           this.formData.collaborationLeaders = '';
+        }
+
+        // 同时更新协同科室分管领导字段（使用相同的数据）
+        const directorField = group4.column.find(c => c.prop === 'collaborationDirectors');
+        if (directorField) {
+          directorField.dicData = directorData;
+          // 清空之前选中的分管领导
+          this.formData.collaborationDirectors = [];
         }
       }
     },
@@ -448,14 +548,31 @@ export default {
     },
 
     updateDeptDirectorField(directorData) {
-      // 更新 group1 中的科室主任字段
+      // 更新 group1 中的科室主任字段、科室分管领导字段和汇报人字段
       const deptGroup = this.formOption.group.find(g => g.prop === 'group1');
       if (deptGroup) {
+        // 更新科室主任字段
         const directorField = deptGroup.column.find(c => c.prop === 'deptDirector');
         if (directorField) {
           directorField.dicData = directorData;
           // 清空之前选中的主任
           this.formData.deptDirector = '';
+        }
+
+        // 更新科室分管领导字段（使用相同的数据）
+        const leaderField = deptGroup.column.find(c => c.prop === 'leader');
+        if (leaderField) {
+          leaderField.dicData = directorData;
+          // 清空之前选中的分管领导
+          this.formData.leader = '';
+        }
+
+        // 更新汇报人字段（使用相同的数据）
+        const reporterField = deptGroup.column.find(c => c.prop === 'reporter');
+        if (reporterField) {
+          reporterField.dicData = directorData;
+          // 清空之前选中的汇报人
+          this.formData.reporter = '';
         }
       }
     },
