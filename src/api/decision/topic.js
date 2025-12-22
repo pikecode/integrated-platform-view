@@ -380,3 +380,15 @@ export const getApprovedTopicPage = (data) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 保存议题（新建/更新）
+ */
+export const saveTopicData = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/update',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};

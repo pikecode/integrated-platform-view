@@ -78,10 +78,13 @@ export const topicFormOption = {
         {
           label: '科室主任',
           prop: 'deptDirector',
-          type: 'input',
+          type: 'select',
           span: 12,
-          placeholder: '自动显示',
-          disabled: true
+          placeholder: '请选择科室主任',
+          dicData: [],
+          rules: [
+            { required: true, message: '请选择科室主任', trigger: 'change' }
+          ]
         },
         {
           label: '汇报人',
@@ -157,11 +160,11 @@ export const topicFormOption = {
           fileSize: 102400,
           accept: '.doc,.docx,.xls,.xlsx,.pdf,.png,.jpg',
           tip: '最多上传5个文件，单个文件不超过100MB，格式要求doc/docx/xls/xlsx/pdf/png/jpg',
-          action: '/blade-resource/oss/endpoint/put-file-attach',
+          action: '/api/xinhui-oa-decision/api/attachment/v1/upload',
           propsHttp: {
             res: 'data',
-            url: 'link',
-            name: 'originalName'
+            url: 'fileKey',
+            name: 'fileName'
           },
           dataType: 'string'
         }
@@ -209,10 +212,13 @@ export const topicFormOption = {
         {
           label: '协同科室主任',
           prop: 'collaborationLeaders',
-          type: 'input',
+          type: 'select',
           span: 12,
           placeholder: '自动显示',
-          disabled: true
+          dicData: [],
+          rules: [
+            { required: true, message: '请选择协同科室主任', trigger: 'change' }
+          ]
         },
         {
           label: '协同科室分管领导',
@@ -221,8 +227,10 @@ export const topicFormOption = {
           span: 12,
           multiple: true,
           placeholder: '自动显示',
-          disabled: true,
-          dicData: []
+          dicData: [],
+          rules: [
+            { required: true, message: '请选择协同科室分管领导', trigger: 'change' }
+          ]
         },
         {
           label: '是否存在舆情风险',
@@ -255,7 +263,7 @@ export const topicFormOption = {
           prop: 'meetingType',
           type: 'select',
           span: 12,
-          dicData: meetingTypeDict,
+          dicData: [],
           placeholder: '请选择会议类型',
           rules: [
             { required: true, message: '请选择会议类型', trigger: 'change' }
