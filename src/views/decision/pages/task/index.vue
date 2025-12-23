@@ -189,6 +189,12 @@
         </el-button>
       </template>
     </avue-crud>
+
+    <!-- 发起任务对话框 -->
+    <create-task-dialog
+      v-model="showCreateTaskDialog"
+      @submit="handleTaskSubmit"
+    />
   </basic-container>
 </template>
 
@@ -197,13 +203,15 @@ import { mapGetters } from 'vuex';
 import { taskOption } from '@/option/decision/task';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
+import CreateTaskDialog from './components/create-task-dialog.vue';
 import * as taskApi from '@/api/decision/task';
 
 export default {
   name: 'TaskManagement',
   components: {
     DecisionBreadcrumb,
-    StatusBadge
+    StatusBadge,
+    CreateTaskDialog
   },
   data() {
     return {
@@ -217,6 +225,7 @@ export default {
       loading: true,
       viewMode: 'list',
       showMoreSearch: false,
+      showCreateTaskDialog: false,
       searchParams: {
         title: '',
         departments: [],
@@ -405,15 +414,19 @@ export default {
     },
 
     handleCreateTask() {
-      this.$router.push('/decision/task/create');
+      this.showCreateTaskDialog = true;
+    },
+
+    handleTaskSubmit(taskData) {
+      // 任务提交成功后刷新列表
+      console.log('任务提交：', taskData);
+      this.onLoad(this.page);
     },
 
     handleRestart(row) {
       // 打开创建对话框，预填充数据
-      this.$router.push({
-        path: '/decision/task/create',
-        query: { restartFrom: row.id }
-      });
+      // TODO: 实现预填充功能
+      this.showCreateTaskDialog = true;
     },
 
     handlePrint(row) {

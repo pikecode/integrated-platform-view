@@ -208,3 +208,25 @@ export const getFeedbackDoneTaskPage = (data) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 获取部门列表
+ */
+export const getDepartmentList = (tenantId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/dept/${tenantId}/list`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取部门人员列表
+ */
+export const getDepartmentUsers = (deptId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/dept/${deptId}/user/get`,
+    method: 'get',
+    meta: { isToken: true }
+  });
+};
