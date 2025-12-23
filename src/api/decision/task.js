@@ -230,3 +230,15 @@ export const getDepartmentUsers = (deptId) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 发起任务
+ */
+export const publishTask = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/publish/v1/create',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};

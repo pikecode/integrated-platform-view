@@ -237,6 +237,7 @@
 
 <script>
 import SelectPersonDialog from './select-person-dialog.vue';
+import * as taskApi from '@/api/decision/task';
 
 export default {
   name: 'CreateTaskDialog',
@@ -399,29 +400,139 @@ export default {
         return;
       }
 
+      if (this.formData.executors.length === 0) {
+        this.$message.warning('请至少选择一个执行人员');
+        return;
+      }
+
       this.submitting = true;
+
+      // 转换时间格式到 ISO 8601
+      const formatDateTime = (date, time) => {
+        if (!date) return null;
+        let hour = time.split(':')[0];
+        let minute = time.split(':')[1] || '00';
+
+        // 处理 24:00 的情况，转换为下一天的 00:00
+        let dateObj = new Date(date);
+        if (hour === '24') {
+          dateObj.setDate(dateObj.getDate() + 1);
+          hour = '00';
+        }
+
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
+      };
+
+      // 构建接收人列表
+      const receiverList = [];
+
+      // 添加执行人 (receiverType = 1)
+      this.formData.executors.forEach(person => {
+        receiverList.push({
+          deptId: person.deptId,
+          deptName: person.deptName,
+          userId: person.id,
+          userName: person.name,
+          receiverType: '1'
+        });
+      });
+
+      // 添加配合人 (receiverType = 2)
+      this.formData.cooperators.forEach(person => {
+        receiverList.push({
+          deptId: person.deptId,
+          deptName: person.deptName,
+          userId: person.id,
+          userName: person.name,
+          receiverType: '2'
+        });
+      });
 
       // 构建提交数据
       const submitData = {
         taskName: this.formData.taskName,
-        taskSource: this.formData.taskSource,
-        taskNo: this.formData.taskNo,
+        taskSourceId: this.formData.taskSource,
+        taskSourceName: this.getTaskSourceName(this.formData.taskSource),
+        taskTagId: this.formData.taskNo,
+        taskTagName: this.getTaskTagName(this.formData.taskNo),
         taskContent: this.formData.taskContent,
-        attachments: this.formData.attachments.map(f => f.name),
-        executors: this.formData.executors,
-        cooperators: this.formData.cooperators,
-        expectedCompleteTime: `${this.formData.expectedCompleteDate} ${this.formData.expectedCompleteTime}`,
-        deadlineTime: `${this.formData.deadlineDate} ${this.formData.deadlineTime}`
+        taskType: '1', // 默认值，可根据需要更改
+        expectFinishTime: formatDateTime(this.formData.expectedCompleteDate, this.formData.expectedCompleteTime),
+        deadlineTime: formatDateTime(this.formData.deadlineDate, this.formData.deadlineTime),
+        attachmentIdList: [], // 暂时为空，需要先上传附件获取ID
+        receiverList: receiverList
       };
 
-      console.log('提交任务数据：', submitData);
+      console.log('【任务发起】提交数据:', submitData);
 
-      // TODO: 调用API提交任务
-      this.$message.success('任务发起成功');
-      this.$emit('update:modelValue', false);
-      this.$emit('submit', submitData);
+      // 调用API提交任务
+      taskApi.publishTask(submitData)
+        .then(response => {
+          console.log('【任务发起】API响应:', response);
 
-      this.submitting = false;
+          if (response.data && response.data.code === 200) {
+            this.$message.success('任务发起成功');
+            this.$emit('update:modelValue', false);
+            this.$emit('submit', submitData);
+          } else {
+            const errorMsg = response.data?.msg || '发起任务失败';
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务发起】请求异常:', error);
+          let errorMsg = '发起任务失败';
+
+          if (!error.response) {
+            errorMsg = '无法连接到服务器，请检查网络和API地址';
+          } else {
+            const status = error.response.status;
+            switch (status) {
+              case 401:
+                errorMsg = '认证失败，请检查登录状态';
+                break;
+              case 403:
+                errorMsg = '没有权限发起任务';
+                break;
+              case 404:
+                errorMsg = '接口地址不存在';
+                break;
+              case 500:
+                errorMsg = '服务器错误，请稍后重试';
+                break;
+              default:
+                errorMsg = `请求失败 (HTTP ${status})`;
+            }
+          }
+
+          this.$message.error(errorMsg);
+        })
+        .finally(() => {
+          this.submitting = false;
+        });
+    },
+
+    // 获取任务来源名称
+    getTaskSourceName(value) {
+      const sourceMap = {
+        'topic': '议题',
+        'meeting': '会议',
+        'other': '其他'
+      };
+      return sourceMap[value] || value;
+    },
+
+    // 获取任务标签名称
+    getTaskTagName(value) {
+      const tagMap = {
+        'no_1': '选项1',
+        'no_2': '选项2'
+      };
+      return tagMap[value] || value;
     }
   }
 };
