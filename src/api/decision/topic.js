@@ -449,3 +449,41 @@ export const withdrawTopic = (topicId, approvalSyncId) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 提交议题结论
+ */
+export const submitTopicConclusion = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/conclusion/v1/create',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 申请议题上会
+ */
+export const applyTopicMeeting = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/meeting/v1/apply',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 上传附件
+ */
+export const uploadAttachment = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request({
+    url: '/api/xinhui-oa-decision/api/attachment/v1/upload',
+    method: 'post',
+    data: formData,
+    meta: { isToken: true }
+  });
+};

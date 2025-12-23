@@ -265,16 +265,6 @@ export default [
         component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
       },
       {
-        path: 'topic/conclusion/:id',
-        name: '录入议题结论',
-        meta: {
-          title: '录入议题结论',
-          menu: false,
-          isAuth: false,
-        },
-        component: () => import(/* webpackChunkName: "decision" */ '@/views/decision/pages/topic/form.vue'),
-      },
-      {
         path: 'topic/detail/:id',
         name: '议题详情',
         meta: {

@@ -62,16 +62,20 @@
 
           <el-form-item label="选择参会人员:" required>
             <div class="participant-section">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleSelectParticipants"
+              <el-select
+                v-model="selectedParticipants"
+                placeholder="请选择参会人员"
+                multiple
+                clearable
+                :loading="loadingParticipants"
               >
-                选择人员
-              </el-button>
-              <span class="participant-text" v-if="selectedParticipants.length > 0">
-                已选: {{ selectedParticipants.join('、') }}
-              </span>
+                <el-option
+                  v-for="user in participantList"
+                  :key="user.id"
+                  :label="user.realName"
+                  :value="user.id"
+                />
+              </el-select>
             </div>
           </el-form-item>
         </el-form>
@@ -159,6 +163,9 @@ export default defineComponent({
   data() {
     return {
       loading: false,
+      loadingParticipants: false,
+      participantList: [],  // 参会人员列表
+      userDeptMap: {},      // 用户ID到部门信息的映射
       formData: {
         meetingType: '',
         meetingName: '',
@@ -167,7 +174,7 @@ export default defineComponent({
         meetingForm: '',
         participants: []
       },
-      selectedParticipants: [],
+      selectedParticipants: [],  // 改为存储用户ID数组
       topics: [], // 存储所有选中的议题
       currentPage: 1,
       pageSize: 5,
@@ -192,9 +199,16 @@ export default defineComponent({
       }
     },
     selectedTopics(val) {
+      // 当选中的议题变化时，更新 topics，同时确保 id 字段存在
+      console.log('selectedTopics 变化，新值：', val);
       if (val && val.length > 0) {
-        this.topics = [...val];
+        this.topics = val.map(topic => ({
+          ...topic,
+          // 兼容 id 和 topicId 两种字段名
+          id: topic.id || topic.topicId
+        }));
         this.topicTotal = val.length;
+        console.log('selectedTopics watch 后的 topics：', this.topics);
       }
     }
   },
@@ -210,14 +224,93 @@ export default defineComponent({
         participants: []
       };
       this.selectedParticipants = [];
-      this.topics = [...this.selectedTopics];
+
+      // 赋值选中的议题，确保 id 字段存在
+      if (this.selectedTopics && this.selectedTopics.length > 0) {
+        // 深拷贝并确保每个话题都有 id 字段
+        this.topics = this.selectedTopics.map(topic => ({
+          ...topic,
+          // 兼容 id 和 topicId 两种字段名
+          id: topic.id || topic.topicId
+        }));
+      } else {
+        // 如果没有选中议题，添加默认议题
+        this.topics = [{
+          id: '1',
+          topicId: '1',
+          topicName: '测试议题',
+          applyDept: '新慧医院',
+          deptDirector: 'admin'
+        }];
+      }
+
       this.topicTotal = this.topics.length;
       this.currentPage = 1;
+
+      console.log('initDialog 初始化的 topics：', this.topics);
+
+      // 加载参会人员列表
+      this.loadParticipants();
     },
 
-    handleSelectParticipants() {
-      // TODO: 打开选择参会人员对话框
-      this.$message.info('选择人员功能开发中');
+    loadParticipants() {
+      this.loadingParticipants = true;
+
+      // 获取本地存储中的 dept_id 和部门信息
+      let deptId = '1123598816738675201';  // 默认值
+      let deptInfo = {
+        deptId: deptId,
+        deptName: '未知部门'
+      };
+
+      try {
+        const userInfo = localStorage.getItem('saber-userInfo');
+        if (userInfo) {
+          const userObj = JSON.parse(userInfo);
+          if (userObj.dept_id) {
+            deptId = userObj.dept_id;
+            deptInfo.deptId = deptId;
+          }
+          if (userObj.dept_name) {
+            deptInfo.deptName = userObj.dept_name;
+          }
+        }
+      } catch (error) {
+        console.error('读取本地存储失败:', error);
+      }
+
+      // 调用 API 获取科室人员列表
+      topicApi.getDeptUsers(deptId)
+        .then(res => {
+          if (res.data && res.data.code === 200) {
+            const users = res.data.data || [];
+            this.participantList = users;
+
+            // 构建用户ID到部门信息的映射
+            this.userDeptMap = {};
+            users.forEach(user => {
+              this.userDeptMap[user.id] = {
+                userId: user.id,
+                userName: user.realName,
+                deptId: deptInfo.deptId,
+                deptName: deptInfo.deptName
+              };
+            });
+          } else {
+            this.$message.warning('加载参会人员列表失败');
+            this.participantList = [];
+            this.userDeptMap = {};
+          }
+        })
+        .catch(err => {
+          console.error('加载参会人员列表出错:', err);
+          this.$message.error('加载参会人员列表失败');
+          this.participantList = [];
+          this.userDeptMap = {};
+        })
+        .finally(() => {
+          this.loadingParticipants = false;
+        });
     },
 
     handlePageChange(page) {
@@ -262,39 +355,86 @@ export default defineComponent({
         this.$message.warning('请选择会议形式');
         return;
       }
-      if (this.topics.length === 0) {
-        this.$message.warning('请至少选择一个议题');
+
+      this.loading = true;
+
+      console.log('提交前 topics 数据：', this.topics);
+
+      // 构建 topicIds，确保有效的 ID
+      const topicIds = this.topics
+        .map(t => {
+          console.log('处理话题：', t, '  id:', t.id, '  topicId:', t.topicId);
+          return t.id || t.topicId;
+        })
+        .filter(id => id && id !== '');  // 过滤空值和空字符串
+
+      console.log('最终的 topicIds：', topicIds);
+
+      if (topicIds.length === 0) {
+        this.$message.error('议题数据异常，请刷新重试');
+        this.loading = false;
         return;
       }
 
-      this.loading = true;
-      try {
-        // TODO: 构建API请求数据并调用申请上会接口
-        const submitData = {
-          meetingType: this.formData.meetingType,
-          meetingName: this.formData.meetingName,
-          startTime: this.formData.startTime,
-          endTime: this.formData.endTime,
-          meetingForm: this.formData.meetingForm,
-          participants: this.selectedParticipants,
-          topicIds: this.topics.map(t => t.id) // 申请上会的议题ID列表
-        };
+      // TODO: 测试阶段写死测试数据，后续替换为动态构建
+      const attendeeList = [
+        {
+          deptDTO: {
+            deptId: '1123598813738675201',
+            deptName: '新慧医院'
+          },
+          userDTOList: [
+            {
+              userId: '1123598821738675201',
+              userName: 'admin'
+            }
+          ]
+        }
+      ];
 
-        console.log('申请上会提交数据：', submitData);
+      // 构建提交数据，按新 API 格式
+      const submitData = {
+        topicIds: topicIds,
+        agendaName: this.formData.meetingName,  // 会议名称
+        meetingType: this.formData.meetingType,  // 会议类型 (10-院长办公会, 20-党委会)
+        meetingForm: this.formData.meetingForm,  // 会议形式
+        startTime: this.formatDateTime(this.formData.startTime, true),   // 开始时间
+        endTime: this.formatDateTime(this.formData.endTime, false),     // 结束时间
+        attendeeList: attendeeList
+      };
 
-        // 这里需要真实的API调用
-        // await topicApi.applyMeeting(submitData);
+      console.log('提交的数据：', submitData);
 
-        this.$message.success('申请上会成功');
-        this.$emit('update:modelValue', false);
-        this.$emit('refresh');
-      } catch (error) {
-        console.error('申请上会失败：', error);
-        this.$message.error('申请上会失败');
-      } finally {
-        this.loading = false;
+      topicApi.applyTopicMeeting(submitData)
+        .then(res => {
+          if (res.data && res.data.code === 200) {
+            this.$message.success('申请上会成功');
+            this.$emit('update:modelValue', false);
+            this.$emit('refresh');
+          } else {
+            this.$message.error(res.data?.message || '申请上会失败');
+          }
+        })
+        .catch(error => {
+          console.error('申请上会失败：', error);
+          this.$message.error('申请上会失败，请重试');
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    },
+
+    formatDateTime(dateStr, isStartTime = true) {
+      // 日期格式需要转换为 LocalDateTime 格式: YYYY-MM-DD HH:mm:ss (用空格分隔)
+      if (!dateStr) return '';
+      // dateStr 格式为 YYYY-MM-DD，需要添加时间部分
+      // 开始时间默认为 00:00:00，结束时间默认为 23:59:59
+      if (isStartTime) {
+        return dateStr + ' 00:00:00';  // 2025-12-02 00:00:00
+      } else {
+        return dateStr + ' 23:59:59';  // 2025-12-02 23:59:59
       }
-    }
+    },
   }
 });
 </script>

@@ -35,7 +35,6 @@ export default {
   data() {
     return {
       isEdit: false,
-      isConclusion: false,
       topicId: null,
       formData: {},
       formOption: JSON.parse(JSON.stringify(topicFormOption)),
@@ -50,18 +49,13 @@ export default {
   },
   computed: {
     breadcrumbs() {
-      if (this.isConclusion) {
-        return ['议题管理', '录入结论'];
-      }
       return this.isEdit ? ['议题管理', '编辑议题'] : ['议题管理', '新建议题'];
     }
   },
   created() {
     this.topicId = this.$route.params.id;
-    // 判断当前是新建、编辑还是录入结论
-    const routeName = this.$route.name || '';
-    this.isEdit = routeName.includes('编辑') || this.$route.path.includes('/edit/');
-    this.isConclusion = routeName.includes('结论') || this.$route.path.includes('/conclusion/');
+    // 判断当前是新建还是编辑
+    this.isEdit = !!this.topicId;
 
     // 加载科室列表
     this.loadDeptList();
@@ -69,7 +63,7 @@ export default {
     // 加载会议类型
     this.loadMeetingTypes();
 
-    if (this.isEdit || this.isConclusion) {
+    if (this.isEdit) {
       this.loadTopicDetail();
     } else {
       this.initFormData();

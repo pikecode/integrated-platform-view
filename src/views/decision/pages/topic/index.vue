@@ -127,23 +127,6 @@
       @refresh-change="refreshChange"
       @on-load="onLoad"
     >
-      <!-- 顶部批量操作按钮 -->
-      <template #menu-left>
-        <el-button type="primary" icon="el-icon-plus" @click="handleCreateTopic">
-          新增议题
-        </el-button>
-        <el-button
-          type="warning"
-          @click="handleBatchApply"
-          :disabled="selectedTopics.length === 0"
-        >
-          批量申请上会
-        </el-button>
-        <el-button @click="handleExport">导出</el-button>
-        <span v-if="selectedTopics.length > 0" class="selection-info">
-          已选择 {{ selectedTopics.length }} 条议题
-        </span>
-      </template>
 
       <!-- 议题名称插槽 - 链接 -->
       <template #title="{ row }">
@@ -553,25 +536,8 @@ export default {
       }
     },
 
-    handleCreateTopic() {
-      this.$router.push('/decision/topic/create');
-    },
-
     handleViewDetail(topicId) {
       this.$router.push(`/decision/topic/detail/${topicId}`);
-    },
-
-    handleBatchApply() {
-      if (this.selectedTopics.length === 0) {
-        this.$message.warning('请先选择议题');
-        return;
-      }
-      this.$message.success(`已申请 ${this.selectedTopics.length} 个议题上会`);
-      this.onLoad(this.page, this.query);
-    },
-
-    handleExport() {
-      this.$message.info('导出功能开发中');
     },
 
     handleCommand(command, row) {

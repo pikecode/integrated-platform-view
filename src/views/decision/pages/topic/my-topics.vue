@@ -212,53 +212,55 @@
 
       <!-- 操作列插槽 - 自定义权限按钮 -->
       <template #menu="{ row }">
-        <el-button
-          type="text"
-          size="small"
-          @click="handleViewDetail(row.id)"
-        >
-          查看详情
-        </el-button>
-        <el-button
-          v-if="canEdit(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('edit', row)"
-        >
-          编辑
-        </el-button>
-        <el-button
-          v-if="canWithdraw(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('withdraw', row)"
-        >
-          撤回
-        </el-button>
-        <el-button
-          v-if="canApply(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('apply', row)"
-        >
-          申请上会
-        </el-button>
-        <el-button
-          v-if="canVote(row)"
-          type="text"
-          size="small"
-          @click="handleCommand('conclusion', row)"
-        >
-          录入结论
-        </el-button>
-        <el-button
-          v-if="row.canPrint"
-          type="text"
-          size="small"
-          @click="handleCommand('print', row)"
-        >
-          打印
-        </el-button>
+        <div class="action-buttons-wrapper">
+          <el-button
+            type="text"
+            size="small"
+            @click="handleViewDetail(row.id)"
+          >
+            查看详情
+          </el-button>
+          <el-button
+            v-if="canEdit(row)"
+            type="text"
+            size="small"
+            @click="handleCommand('edit', row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            v-if="canWithdraw(row)"
+            type="text"
+            size="small"
+            @click="handleCommand('withdraw', row)"
+          >
+            撤回
+          </el-button>
+          <el-button
+            v-if="canApply(row)"
+            type="text"
+            size="small"
+            @click="handleCommand('apply', row)"
+          >
+            申请上会
+          </el-button>
+          <el-button
+            v-if="canVote(row)"
+            type="text"
+            size="small"
+            @click="handleCommand('conclusion', row)"
+          >
+            录入结论
+          </el-button>
+          <el-button
+            v-if="row.canPrint"
+            type="text"
+            size="small"
+            @click="handleCommand('print', row)"
+          >
+            打印
+          </el-button>
+        </div>
       </template>
         </avue-crud>
         </template>
@@ -464,53 +466,55 @@
 
           <!-- 操作列插槽 - 自定义权限按钮 -->
           <template #menu="{ row }">
-            <el-button
-              type="text"
-              size="small"
-              @click="handleViewDetail(row.id)"
-            >
-              查看详情
-            </el-button>
-            <el-button
-              v-if="canEdit(row)"
-              type="text"
-              size="small"
-              @click="handleCommand('edit', row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              v-if="canWithdraw(row)"
-              type="text"
-              size="small"
-              @click="handleCommand('withdraw', row)"
-            >
-              撤回
-            </el-button>
-            <el-button
-              v-if="canApply(row)"
-              type="text"
-              size="small"
-              @click="handleCommand('apply', row)"
-            >
-              申请上会
-            </el-button>
-            <el-button
-              v-if="canVote(row)"
-              type="text"
-              size="small"
-              @click="handleCommand('conclusion', row)"
-            >
-              录入结论
-            </el-button>
-            <el-button
-              v-if="row.canPrint"
-              type="text"
-              size="small"
-              @click="handleCommand('print', row)"
-            >
-              打印
-            </el-button>
+            <div class="action-buttons-wrapper">
+              <el-button
+                type="text"
+                size="small"
+                @click="handleViewDetail(row.id)"
+              >
+                查看详情
+              </el-button>
+              <el-button
+                v-if="canEdit(row)"
+                type="text"
+                size="small"
+                @click="handleCommand('edit', row)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                v-if="canWithdraw(row)"
+                type="text"
+                size="small"
+                @click="handleCommand('withdraw', row)"
+              >
+                撤回
+              </el-button>
+              <el-button
+                v-if="canApply(row)"
+                type="text"
+                size="small"
+                @click="handleCommand('apply', row)"
+              >
+                申请上会
+              </el-button>
+              <el-button
+                v-if="canVote(row)"
+                type="text"
+                size="small"
+                @click="handleCommand('conclusion', row)"
+              >
+                录入结论
+              </el-button>
+              <el-button
+                v-if="row.canPrint"
+                type="text"
+                size="small"
+                @click="handleCommand('print', row)"
+              >
+                打印
+              </el-button>
+            </div>
           </template>
         </avue-crud>
         </template>
@@ -523,6 +527,13 @@
       :selected-topics="selectedTopicsForApply"
       @refresh="onLoad(page, query)"
     />
+
+    <!-- 录入结论弹窗 -->
+    <conclusion-dialog
+      v-model="showConclusionDialog"
+      :current-topic="currentTopicForConclusion"
+      @submit="handleConclusionSubmit"
+    />
   </div>
 </template>
 
@@ -531,6 +542,7 @@ import { mapGetters } from 'vuex';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
 import ApplyMeetingDialog from './components/apply-meeting-dialog.vue';
+import ConclusionDialog from './components/conclusion-dialog.vue';
 import { myTopicsOption } from '@/option/decision/topic';
 import * as topicApi from '@/api/decision/topic';
 
@@ -539,7 +551,8 @@ export default {
   components: {
     DecisionBreadcrumb,
     StatusBadge,
-    ApplyMeetingDialog
+    ApplyMeetingDialog,
+    ConclusionDialog
   },
   data() {
     return {
@@ -747,7 +760,10 @@ export default {
       ],
       // 申请上会弹窗相关
       showApplyMeetingDialog: false,
-      selectedTopicsForApply: []
+      selectedTopicsForApply: [],
+      // 录入结论弹窗相关
+      showConclusionDialog: false,
+      currentTopicForConclusion: null
     };
   },
   computed: {
@@ -966,35 +982,13 @@ export default {
           this.data = res.data.data.records || [];
           this.page.total = res.data.data.total || 0;
 
-          console.log('原始数据：', this.data);
-
-          // TODO: 这些权限字段目前mock为true，后续用真实数据替换
-          const mockData = [];
-          for (let i = 0; i < this.data.length; i++) {
-            const item = this.data[i];
-            mockData.push({
-              ...item,
-              canEdit: true,  // 直接设为true，跳过复杂逻辑
-              canWithdraw: true,
-              canApplyMeeting: true,
-              canInputConclusion: true,
-              approvalSyncId: item.approvalSyncId || `sync_${item.id}`
-            });
-          }
-          this.data = mockData;
-
-          console.log('Mock后的数据：', this.data);
-          console.log('第一条数据的canApplyMeeting:', this.data[0]?.canApplyMeeting);
-
           // 强制更新视图，确保v-if判断能正确执行
           this.$nextTick(() => {
             // 刷新avue-crud组件，清除任何缓存
             if (this.$refs.crud) {
               this.$refs.crud.reload();
-              console.log('已刷新crud表格');
             }
             this.$forceUpdate();
-            console.log('已执行forceUpdate');
           });
         } else {
           this.$message.error(res.data.msg || '加载议题失败');
@@ -1030,12 +1024,10 @@ export default {
     },
 
     handleCurrentChange(currentPage) {
-      console.log('分页改变:', currentPage, '当前 page 对象:', this.page);
       this.onLoad(this.page, this.query);
     },
 
     handleSizeChange(pageSize) {
-      console.log('每页大小改变:', pageSize, '当前 page 对象:', this.page);
       this.page.currentPage = 1;  // 改变页大小时重置到第一页
       this.onLoad(this.page, this.query);
     },
@@ -1096,8 +1088,14 @@ export default {
         this.$message.warning('请先选择议题');
         return;
       }
-      this.$message.success(`已申请 ${this.selectedTopics.length} 个议题上会`);
-      this.onLoad(this.page, this.query);
+      // 将选中的议题数组传入申请上会弹窗
+      this.selectedTopicsForApply = this.selectedTopics.map(topic => ({
+        id: topic.id,
+        topicName: topic.topicName,
+        applyDept: topic.department,
+        deptDirector: topic.deptDirector
+      }));
+      this.showApplyMeetingDialog = true;
     },
 
     handleExport() {
@@ -1127,8 +1125,9 @@ export default {
           this.handleWithdraw(row);
           break;
         case 'conclusion':
-          // 跳转到编辑页面，以录入结论的模式
-          this.$router.push(`/decision/topic/conclusion/${row.id}`);
+          // 打开录入结论弹窗
+          this.currentTopicForConclusion = row;
+          this.showConclusionDialog = true;
           break;
         case 'delete':
           this.handleDelete(row.id);
@@ -1177,14 +1176,21 @@ export default {
       });
     },
 
+    handleConclusionSubmit(conclusionData) {
+      // 结论提交成功后刷新列表
+      if (this.activeTab === '10') {
+        this.onLoad(this.page, this.query);
+      } else if (this.activeTab === '20') {
+        this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
+      }
+    },
+
     canEdit(row) {
       return row.canEdit === true;
     },
 
     canApply(row) {
-      const result = row.canApplyMeeting === true;
-      console.log('canApply检查 - row.id:', row.id, 'canApplyMeeting:', row.canApplyMeeting, '结果:', result);
-      return result;
+      return row.canApplyMeeting === true;
     },
 
     canVote(row) {
@@ -1257,35 +1263,13 @@ export default {
           this.dataCommittee = res.data.data.records || [];
           this.pageCommittee.total = res.data.data.total || 0;
 
-          console.log('党委会原始数据：', this.dataCommittee);
-
-          // TODO: 这些权限字段目前mock为true，后续用真实数据替换
-          const mockDataCommittee = [];
-          for (let i = 0; i < this.dataCommittee.length; i++) {
-            const item = this.dataCommittee[i];
-            mockDataCommittee.push({
-              ...item,
-              canEdit: true,  // 直接设为true，跳过复杂逻辑
-              canWithdraw: true,
-              canApplyMeeting: true,
-              canInputConclusion: true,
-              approvalSyncId: item.approvalSyncId || `sync_${item.id}`
-            });
-          }
-          this.dataCommittee = mockDataCommittee;
-
-          console.log('党委会Mock后的数据：', this.dataCommittee);
-          console.log('党委会第一条数据的canApplyMeeting:', this.dataCommittee[0]?.canApplyMeeting);
-
           // 强制更新视图，确保v-if判断能正确执行
           this.$nextTick(() => {
             // 刷新avue-crud组件，清除任何缓存
             if (this.$refs.crudCommittee) {
               this.$refs.crudCommittee.reload();
-              console.log('已刷新党委会crud表格');
             }
             this.$forceUpdate();
-            console.log('党委会已执行forceUpdate');
           });
         } else {
           this.$message.error(res.data.msg || '加载议题失败');
@@ -1325,12 +1309,10 @@ export default {
     },
 
     handleCurrentChangeCommittee(currentPage) {
-      console.log('党委会分页改变:', currentPage, '当前 pageCommittee 对象:', this.pageCommittee);
       this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
     },
 
     handleSizeChangeCommittee(pageSize) {
-      console.log('党委会每页大小改变:', pageSize, '当前 pageCommittee 对象:', this.pageCommittee);
       this.pageCommittee.currentPage = 1;  // 改变页大小时重置到第一页
       this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
     },
@@ -1363,8 +1345,14 @@ export default {
         this.$message.warning('请先选择议题');
         return;
       }
-      this.$message.success(`已申请 ${this.selectedTopicsCommittee.length} 个议题上会`);
-      this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
+      // 将选中的议题数组传入申请上会弹窗
+      this.selectedTopicsForApply = this.selectedTopicsCommittee.map(topic => ({
+        id: topic.id,
+        topicName: topic.topicName,
+        applyDept: topic.department,
+        deptDirector: topic.deptDirector
+      }));
+      this.showApplyMeetingDialog = true;
     },
 
     // ==================== 自定义搜索处理方法 ====================
@@ -1482,21 +1470,22 @@ export default {
   ::v-deep .avue-crud {
     margin-top: 20px;
 
-    // 操作列按钮排成一行不换行
+    // 操作列按钮排成两行显示
     .avue-crud__menu {
-      white-space: nowrap;
-      overflow-x: auto;
+      .action-buttons-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        max-width: 200px;
+        align-items: flex-start;
 
-      .el-button {
-        white-space: nowrap;
-        margin-right: 1px;
-        padding: 0 4px !important;
-        font-size: 12px;
-        height: 28px;
-        line-height: 28px;
-
-        &:last-child {
-          margin-right: 0;
+        .el-button {
+          white-space: nowrap;
+          padding: 0 4px !important;
+          font-size: 12px;
+          height: 28px;
+          line-height: 28px;
+          flex: 0 1 auto;
         }
       }
     }
