@@ -4,7 +4,7 @@
     <decision-breadcrumb :breadcrumbs="['议题管理', '我发布的']" />
 
     <!-- Tab 切换 -->
-    <el-tabs v-model="activeTab" class="meeting-tabs" @tab-click="handleTabChange">
+    <el-tabs v-model="activeTab" class="meeting-tabs" @tab-change="handleTabChange">
       <el-tab-pane
         v-for="meetingType in meetingTypeList"
         :key="meetingType.code"
@@ -176,10 +176,9 @@
       @search-change="searchChange"
       @search-reset="searchReset"
       @selection-change="selectionChange"
-      @current-change="currentChange"
-      @size-change="sizeChange"
+      @current-change="handleCurrentChange"
+      @size-change="handleSizeChange"
       @refresh-change="refreshChange"
-      @on-load="onLoad"
     >
       <!-- 顶部批量操作按钮 -->
       <template #menu-left>
@@ -429,10 +428,9 @@
           @search-change="searchChangeCommittee"
           @search-reset="searchResetCommittee"
           @selection-change="selectionChangeCommittee"
-          @current-change="currentChangeCommittee"
-          @size-change="sizeChangeCommittee"
+          @current-change="handleCurrentChangeCommittee"
+          @size-change="handleSizeChangeCommittee"
           @refresh-change="refreshChangeCommittee"
-          @on-load="onLoadCommittee"
         >
           <!-- 顶部批量操作按钮 -->
           <template #menu-left>
@@ -518,6 +516,13 @@
         </template>
       </el-tab-pane>
     </el-tabs>
+
+    <!-- 申请上会弹窗 -->
+    <apply-meeting-dialog
+      v-model="showApplyMeetingDialog"
+      :selected-topics="selectedTopicsForApply"
+      @refresh="onLoad(page, query)"
+    />
   </div>
 </template>
 
@@ -525,6 +530,7 @@
 import { mapGetters } from 'vuex';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
+import ApplyMeetingDialog from './components/apply-meeting-dialog.vue';
 import { myTopicsOption } from '@/option/decision/topic';
 import * as topicApi from '@/api/decision/topic';
 
@@ -532,7 +538,8 @@ export default {
   name: 'MyTopics',
   components: {
     DecisionBreadcrumb,
-    StatusBadge
+    StatusBadge,
+    ApplyMeetingDialog
   },
   data() {
     return {
@@ -580,8 +587,8 @@ export default {
       loading: true,
       data: [],
       page: {
-        pageSize: 10,
         currentPage: 1,
+        pageSize: 10,
         total: 0
       },
       selectedTopics: [],
@@ -591,8 +598,8 @@ export default {
       loadingCommittee: true,
       dataCommittee: [],
       pageCommittee: {
-        pageSize: 10,
         currentPage: 1,
+        pageSize: 10,
         total: 0
       },
       selectedTopicsCommittee: [],
@@ -737,7 +744,10 @@ export default {
           creator: 'admin',
           createdAt: '2024-10-20 09:30:00'
         }
-      ]
+      ],
+      // 申请上会弹窗相关
+      showApplyMeetingDialog: false,
+      selectedTopicsForApply: []
     };
   },
   computed: {
@@ -910,7 +920,7 @@ export default {
 
         // 构建API请求参数
         const requestData = {
-          current: page.currentPage,
+          current: page.currentPage - 1,  // API 期望 0-indexed (第一页是0，所以 1-1=0)
           size: page.pageSize,
           meetingType: 10  // 院长办公室
         };
@@ -955,6 +965,37 @@ export default {
         if (res.data && res.data.code === 200) {
           this.data = res.data.data.records || [];
           this.page.total = res.data.data.total || 0;
+
+          console.log('原始数据：', this.data);
+
+          // TODO: 这些权限字段目前mock为true，后续用真实数据替换
+          const mockData = [];
+          for (let i = 0; i < this.data.length; i++) {
+            const item = this.data[i];
+            mockData.push({
+              ...item,
+              canEdit: true,  // 直接设为true，跳过复杂逻辑
+              canWithdraw: true,
+              canApplyMeeting: true,
+              canInputConclusion: true,
+              approvalSyncId: item.approvalSyncId || `sync_${item.id}`
+            });
+          }
+          this.data = mockData;
+
+          console.log('Mock后的数据：', this.data);
+          console.log('第一条数据的canApplyMeeting:', this.data[0]?.canApplyMeeting);
+
+          // 强制更新视图，确保v-if判断能正确执行
+          this.$nextTick(() => {
+            // 刷新avue-crud组件，清除任何缓存
+            if (this.$refs.crud) {
+              this.$refs.crud.reload();
+              console.log('已刷新crud表格');
+            }
+            this.$forceUpdate();
+            console.log('已执行forceUpdate');
+          });
         } else {
           this.$message.error(res.data.msg || '加载议题失败');
           this.data = [];
@@ -988,14 +1029,14 @@ export default {
       this.selectedTopics = list;
     },
 
-    currentChange(currentPage) {
-      this.page.currentPage = currentPage;
+    handleCurrentChange(currentPage) {
+      console.log('分页改变:', currentPage, '当前 page 对象:', this.page);
       this.onLoad(this.page, this.query);
     },
 
-    sizeChange(pageSize) {
-      this.page.pageSize = pageSize;
-      this.page.currentPage = 1;
+    handleSizeChange(pageSize) {
+      console.log('每页大小改变:', pageSize, '当前 page 对象:', this.page);
+      this.page.currentPage = 1;  // 改变页大小时重置到第一页
       this.onLoad(this.page, this.query);
     },
 
@@ -1066,17 +1107,28 @@ export default {
     handleCommand(command, row) {
       switch (command) {
         case 'edit':
-          this.$router.push(`/decision/topic/detail/${row.id}`);
+          // 跳转到编辑页面，并传递议题ID
+          this.$router.push(`/decision/topic/edit/${row.id}`);
           break;
         case 'apply':
-          this.$message.success('已申请上会');
-          this.onLoad(this.page, this.query);
+          // 打开申请上会弹窗，将当前行作为选中的议题
+          this.selectedTopicsForApply = [{
+            id: row.id,
+            topicName: row.topicName,
+            applyDept: row.department,
+            deptDirector: row.deptDirector
+          }];
+          this.showApplyMeetingDialog = true;
           break;
         case 'vote':
           this.$router.push(`/decision/topic/vote/${row.id}`);
           break;
         case 'withdraw':
-          this.handleWithdraw(row.id);
+          this.handleWithdraw(row);
+          break;
+        case 'conclusion':
+          // 跳转到编辑页面，以录入结论的模式
+          this.$router.push(`/decision/topic/conclusion/${row.id}`);
           break;
         case 'delete':
           this.handleDelete(row.id);
@@ -1097,14 +1149,31 @@ export default {
       });
     },
 
-    handleWithdraw(topicId) {
+    handleWithdraw(row) {
       this.$confirm('确定撤回此议题吗？', '警告', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
-      }).then(() => {
-        this.$message.success('已撤回');
-        this.onLoad(this.page, this.query);
+      }).then(async () => {
+        try {
+          const res = await topicApi.withdrawTopic(row.id, row.approvalSyncId);
+          if (res.data && res.data.code === 200) {
+            this.$message.success('议题已撤回');
+            // 刷新当前tab的列表
+            if (this.activeTab === '10') {
+              this.onLoad(this.page, this.query);
+            } else if (this.activeTab === '20') {
+              this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
+            }
+          } else {
+            this.$message.error(res.data.msg || '撤回失败');
+          }
+        } catch (error) {
+          console.error('撤回议题失败：', error);
+          this.$message.error('撤回议题失败');
+        }
+      }).catch(() => {
+        // 用户取消操作
       });
     },
 
@@ -1113,7 +1182,9 @@ export default {
     },
 
     canApply(row) {
-      return row.canApplyMeeting === true;
+      const result = row.canApplyMeeting === true;
+      console.log('canApply检查 - row.id:', row.id, 'canApplyMeeting:', row.canApplyMeeting, '结果:', result);
+      return result;
     },
 
     canVote(row) {
@@ -1140,7 +1211,7 @@ export default {
 
         // 构建API请求参数
         const requestData = {
-          current: page.currentPage,
+          current: page.currentPage - 1,  // API 期望 0-indexed (第一页是0，所以 1-1=0)
           size: page.pageSize,
           meetingType: 20  // 党委会
         };
@@ -1185,6 +1256,37 @@ export default {
         if (res.data && res.data.code === 200) {
           this.dataCommittee = res.data.data.records || [];
           this.pageCommittee.total = res.data.data.total || 0;
+
+          console.log('党委会原始数据：', this.dataCommittee);
+
+          // TODO: 这些权限字段目前mock为true，后续用真实数据替换
+          const mockDataCommittee = [];
+          for (let i = 0; i < this.dataCommittee.length; i++) {
+            const item = this.dataCommittee[i];
+            mockDataCommittee.push({
+              ...item,
+              canEdit: true,  // 直接设为true，跳过复杂逻辑
+              canWithdraw: true,
+              canApplyMeeting: true,
+              canInputConclusion: true,
+              approvalSyncId: item.approvalSyncId || `sync_${item.id}`
+            });
+          }
+          this.dataCommittee = mockDataCommittee;
+
+          console.log('党委会Mock后的数据：', this.dataCommittee);
+          console.log('党委会第一条数据的canApplyMeeting:', this.dataCommittee[0]?.canApplyMeeting);
+
+          // 强制更新视图，确保v-if判断能正确执行
+          this.$nextTick(() => {
+            // 刷新avue-crud组件，清除任何缓存
+            if (this.$refs.crudCommittee) {
+              this.$refs.crudCommittee.reload();
+              console.log('已刷新党委会crud表格');
+            }
+            this.$forceUpdate();
+            console.log('党委会已执行forceUpdate');
+          });
         } else {
           this.$message.error(res.data.msg || '加载议题失败');
           this.dataCommittee = [];
@@ -1218,18 +1320,18 @@ export default {
       this.selectedTopicsCommittee = list;
     },
 
-    currentChangeCommittee(currentPage) {
-      this.pageCommittee.currentPage = currentPage;
-      this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
-    },
-
-    sizeChangeCommittee(pageSize) {
-      this.pageCommittee.pageSize = pageSize;
-      this.pageCommittee.currentPage = 1;
-      this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
-    },
-
     refreshChangeCommittee() {
+      this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
+    },
+
+    handleCurrentChangeCommittee(currentPage) {
+      console.log('党委会分页改变:', currentPage, '当前 pageCommittee 对象:', this.pageCommittee);
+      this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
+    },
+
+    handleSizeChangeCommittee(pageSize) {
+      console.log('党委会每页大小改变:', pageSize, '当前 pageCommittee 对象:', this.pageCommittee);
+      this.pageCommittee.currentPage = 1;  // 改变页大小时重置到第一页
       this.onLoadCommittee(this.pageCommittee, this.queryCommittee);
     },
 

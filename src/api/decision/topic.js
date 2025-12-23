@@ -437,3 +437,15 @@ export const saveTopicData = (data) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 撤回议题
+ */
+export const withdrawTopic = (topicId, approvalSyncId) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/publish/v1/withdraw',
+    method: 'post',
+    params: { topicId, approvalSyncId },
+    meta: { isToken: true }
+  });
+};
