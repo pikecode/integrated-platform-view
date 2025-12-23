@@ -500,7 +500,7 @@ export default {
 
       this.submitting = true;
 
-      // 转换时间格式到 ISO 8601
+      // 转换时间格式为 YYYY-MM-DD HH:MM:SS
       const formatDateTime = (date, time) => {
         if (!date) return null;
         let hour = time.split(':')[0];
@@ -517,7 +517,7 @@ export default {
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const day = String(dateObj.getDate()).padStart(2, '0');
 
-        return `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
+        return `${year}-${month}-${day} ${hour}:${minute}:00`;
       };
 
       // 构建接收人列表
