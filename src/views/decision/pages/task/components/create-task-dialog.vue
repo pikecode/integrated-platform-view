@@ -84,11 +84,38 @@
           <div class="attachment-list" v-if="formData.attachments.length > 0">
             <div v-for="(file, index) in formData.attachments" :key="index" class="attachment-item">
               <span class="file-name">{{ file.name }}</span>
+              <span
+                v-if="file.status === 'uploading'"
+                class="upload-status uploading"
+              >
+                上传中...
+              </span>
+              <span
+                v-else-if="file.status === 'success'"
+                class="upload-status success"
+              >
+                ✓ 已上传
+              </span>
+              <span
+                v-else-if="file.status === 'error'"
+                class="upload-status error"
+              >
+                ✗ 上传失败
+              </span>
               <div class="file-actions">
-                <el-link type="primary" :underline="false" @click="handlePreviewFile(file)">
+                <el-link
+                  type="primary"
+                  :underline="false"
+                  @click="handlePreviewFile(file)"
+                  :disabled="file.status !== 'success'"
+                >
                   预览
                 </el-link>
-                <el-link type="danger" :underline="false" @click="handleRemoveFile(index)">
+                <el-link
+                  type="danger"
+                  :underline="false"
+                  @click="handleRemoveFile(index)"
+                >
                   删除
                 </el-link>
               </div>
@@ -319,13 +346,65 @@ export default {
             return;
           }
 
-          // 添加文件
-          this.formData.attachments.push({
+          // 添加文件到列表并上传
+          const attachmentItem = {
             name: file.name,
             file: file,
-            size: file.size
-          });
-          this.$message.success('文件添加成功');
+            size: file.size,
+            status: 'uploading', // 'uploading' | 'success' | 'error'
+            attachmentId: null
+          };
+
+          this.formData.attachments.push(attachmentItem);
+
+          // 上传文件到服务器
+          taskApi.uploadAttachment(file)
+            .then(response => {
+              console.log('【文件上传】API响应:', response);
+
+              if (response.data && response.data.code === 200) {
+                attachmentItem.status = 'success';
+                attachmentItem.attachmentId = response.data.data?.id || response.data.data;
+                console.log('【文件上传】✓ 上传成功，ID:', attachmentItem.attachmentId);
+              } else {
+                attachmentItem.status = 'error';
+                const errorMsg = response.data?.msg || '上传文件失败';
+                console.error('【文件上传】✗ 服务器返回错误:', response.data);
+                this.$message.error(errorMsg);
+              }
+            })
+            .catch(error => {
+              console.error('【文件上传】✗ 请求异常:', error);
+              attachmentItem.status = 'error';
+
+              let errorMsg = '上传文件失败';
+              if (!error.response) {
+                errorMsg = '无法连接到服务器，请检查网络';
+              } else {
+                const status = error.response.status;
+                switch (status) {
+                  case 401:
+                    errorMsg = '认证失败，请检查登录状态';
+                    break;
+                  case 403:
+                    errorMsg = '没有权限上传文件';
+                    break;
+                  case 404:
+                    errorMsg = '接口地址不存在';
+                    break;
+                  case 413:
+                    errorMsg = '文件过大';
+                    break;
+                  case 500:
+                    errorMsg = '服务器错误，请稍后重试';
+                    break;
+                  default:
+                    errorMsg = `上传失败 (HTTP ${status})`;
+                }
+              }
+
+              this.$message.error(errorMsg);
+            });
         }
       };
       fileInput.click();
@@ -405,6 +484,20 @@ export default {
         return;
       }
 
+      // 检查是否有上传失败的文件
+      const failedAttachments = this.formData.attachments.filter(a => a.status === 'error');
+      if (failedAttachments.length > 0) {
+        this.$message.warning('请删除上传失败的文件后重试');
+        return;
+      }
+
+      // 检查是否有正在上传的文件
+      const uploadingAttachments = this.formData.attachments.filter(a => a.status === 'uploading');
+      if (uploadingAttachments.length > 0) {
+        this.$message.warning('请等待所有文件上传完成后再提交');
+        return;
+      }
+
       this.submitting = true;
 
       // 转换时间格式到 ISO 8601
@@ -463,7 +556,9 @@ export default {
         taskType: '1', // 默认值，可根据需要更改
         expectFinishTime: formatDateTime(this.formData.expectedCompleteDate, this.formData.expectedCompleteTime),
         deadlineTime: formatDateTime(this.formData.deadlineDate, this.formData.deadlineTime),
-        attachmentIdList: [], // 暂时为空，需要先上传附件获取ID
+        attachmentIdList: this.formData.attachments
+          .filter(a => a.status === 'success' && a.attachmentId)
+          .map(a => a.attachmentId),
         receiverList: receiverList
       };
 
@@ -603,6 +698,29 @@ export default {
         .file-name {
           color: #0066cc;
           flex: 1;
+        }
+
+        .upload-status {
+          font-size: 11px;
+          margin-left: 8px;
+          padding: 2px 6px;
+          border-radius: 3px;
+          white-space: nowrap;
+
+          &.uploading {
+            color: #ff9500;
+            background-color: #fff7e6;
+          }
+
+          &.success {
+            color: #52c41a;
+            background-color: #f6ffed;
+          }
+
+          &.error {
+            color: #ff4d4f;
+            background-color: #fff1f0;
+          }
         }
 
         .file-actions {

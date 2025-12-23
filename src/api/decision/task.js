@@ -242,3 +242,21 @@ export const publishTask = (data) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 上传任务附件
+ */
+export const uploadAttachment = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return request({
+    url: '/api/xinhui-oa-task/api/attachment/v1/upload',
+    method: 'post',
+    data: formData,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    },
+    meta: { isToken: true }
+  });
+};
