@@ -336,14 +336,19 @@ export default {
         console.log('【部门人员】API响应:', response);
 
         if (response.data && response.data.code === 200) {
-          const persons = response.data.data || [];
+          const userList = response.data.data?.userList || [];
           // 转换为本地格式，并设置 checked 状态
-          this.deptPersons[deptId] = persons.map(person => ({
+          this.deptPersons[deptId] = userList.map(person => ({
             id: person.id,
             name: person.realName || person.name,
+            realName: person.realName,
+            roleId: person.roleId,
+            postId: person.postId,
+            roleName: person.roleName,
+            postName: person.postName,
             checked: false
           }));
-          console.log('【部门人员】✓ 加载成功，共', persons.length, '人');
+          console.log('【部门人员】✓ 加载成功，共', userList.length, '人');
         } else {
           const errorMsg = response.data?.msg || '加载人员失败';
           console.error('【部门人员】✗ 服务器返回错误:', response.data);
@@ -455,8 +460,13 @@ export default {
         this.selectedPersons.push({
           id: person.id,
           name: person.name,
+          realName: person.realName,
           deptId: this.selectedDeptId,
-          deptName: this.selectedDept.deptName
+          deptName: this.selectedDept.deptName,
+          roleId: person.roleId,
+          postId: person.postId,
+          roleName: person.roleName,
+          postName: person.postName
         });
       });
     },
