@@ -41,17 +41,22 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="任务编号:" required>
+            <el-form-item label="任务标签:" required>
               <el-select
                 v-model="formData.taskNo"
-                placeholder="请选择任务来源"
+                placeholder="请选择任务标签"
+                :loading="loadingTaskTag"
                 :disabled="!formData.taskSource"
               >
-                <el-option label="选项1" value="no_1" />
-                <el-option label="选项2" value="no_2" />
+                <el-option
+                  v-for="item in taskTagOptions"
+                  :key="item.dictValue"
+                  :label="item.dictLabel"
+                  :value="item.dictValue"
+                />
               </el-select>
               <el-tooltip
-                content="任务来源ID任务编号数字开头配置"
+                content="根据任务来源选择对应的任务标签"
                 placement="top"
                 class="help-icon"
               >
@@ -286,9 +291,11 @@ export default {
     return {
       submitting: false,
       loadingTaskSource: false,
+      loadingTaskTag: false,
       showSelectExecutorDialog: false,
       showSelectCooperatorDialog: false,
       taskSourceOptions: [], // 任务来源选项
+      taskTagOptions: [], // 任务标签选项
       formData: {
         taskName: '',
         taskSource: '',
@@ -309,6 +316,14 @@ export default {
       if (val) {
         this.initForm();
         this.loadTaskSource();
+      }
+    },
+    'formData.taskSource'(newVal) {
+      if (newVal) {
+        this.loadTaskTag(newVal);
+      } else {
+        this.taskTagOptions = [];
+        this.formData.taskNo = '';
       }
     }
   },
@@ -334,6 +349,31 @@ export default {
           this.loadingTaskSource = false;
         });
     },
+
+    loadTaskTag(sourceValue) {
+      this.loadingTaskTag = true;
+      this.formData.taskNo = '';
+      this.taskTagOptions = [];
+
+      taskApi.getDictionary('oatask-rwbq')
+        .then(response => {
+          console.log('【任务标签】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            this.taskTagOptions = response.data.data || [];
+          } else {
+            const errorMsg = response.data?.msg || '加载任务标签失败';
+            console.error('【任务标签】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务标签】请求异常:', error);
+          this.$message.error('加载任务标签失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingTaskTag = false;
+        });
+    },
     initForm() {
       this.formData = {
         taskName: '',
@@ -351,8 +391,7 @@ export default {
     },
 
     handleTaskSourceChange() {
-      // 任务来源变化时，重置任务编号
-      this.formData.taskNo = '';
+      // 任务来源变化时，监听器会自动处理任务标签的加载
     },
 
     handleSelectFile() {
@@ -647,11 +686,8 @@ export default {
 
     // 获取任务标签名称
     getTaskTagName(value) {
-      const tagMap = {
-        'no_1': '选项1',
-        'no_2': '选项2'
-      };
-      return tagMap[value] || value;
+      const option = this.taskTagOptions.find(item => item.dictValue === value);
+      return option ? option.dictLabel : value;
     }
   }
 };
