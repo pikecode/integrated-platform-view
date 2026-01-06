@@ -261,3 +261,15 @@ export const uploadAttachment = (file) => {
   });
 };
 
+/**
+ * 获取字典数据
+ */
+export const getDictionary = (code) => {
+  return request({
+    url: `/api/blade-system/dict/dictionary`,
+    method: 'get',
+    params: { code },
+    meta: { isToken: true }
+  });
+};
+

@@ -28,11 +28,15 @@
               <el-select
                 v-model="formData.taskSource"
                 placeholder="请选择任务来源"
+                :loading="loadingTaskSource"
                 @change="handleTaskSourceChange"
               >
-                <el-option label="议题" value="topic" />
-                <el-option label="会议" value="meeting" />
-                <el-option label="其他" value="other" />
+                <el-option
+                  v-for="item in taskSourceOptions"
+                  :key="item.dictValue"
+                  :label="item.dictLabel"
+                  :value="item.dictValue"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -281,8 +285,10 @@ export default {
   data() {
     return {
       submitting: false,
+      loadingTaskSource: false,
       showSelectExecutorDialog: false,
       showSelectCooperatorDialog: false,
+      taskSourceOptions: [], // 任务来源选项
       formData: {
         taskName: '',
         taskSource: '',
@@ -302,10 +308,32 @@ export default {
     modelValue(val) {
       if (val) {
         this.initForm();
+        this.loadTaskSource();
       }
     }
   },
   methods: {
+    loadTaskSource() {
+      this.loadingTaskSource = true;
+      taskApi.getDictionary('oatask_rwly')
+        .then(response => {
+          console.log('【任务来源】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            this.taskSourceOptions = response.data.data || [];
+          } else {
+            const errorMsg = response.data?.msg || '加载任务来源失败';
+            console.error('【任务来源】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务来源】请求异常:', error);
+          this.$message.error('加载任务来源失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingTaskSource = false;
+        });
+    },
     initForm() {
       this.formData = {
         taskName: '',
@@ -613,12 +641,8 @@ export default {
 
     // 获取任务来源名称
     getTaskSourceName(value) {
-      const sourceMap = {
-        'topic': '议题',
-        'meeting': '会议',
-        'other': '其他'
-      };
-      return sourceMap[value] || value;
+      const option = this.taskSourceOptions.find(item => item.dictValue === value);
+      return option ? option.dictLabel : value;
     },
 
     // 获取任务标签名称
