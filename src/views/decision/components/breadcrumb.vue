@@ -52,7 +52,7 @@ export default {
         '首页': '/decision/index',
         '待我审批': '/decision/topic',
         '已审批': '/decision/topic',
-        '我发布的': '/decision/topic', // 议题的我发布的
+        '我发布的': '/decision/task', // 任务的我发布的
         '我参与的': '/decision/task/participate',
         '议程安排': '/decision/topic/schedule'
       };

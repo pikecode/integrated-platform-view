@@ -311,7 +311,7 @@ export default {
         console.log('【租户ID】localStorage.saber-userInfo:', userInfoStr);
 
         const userInfo = JSON.parse(userInfoStr || '{}');
-        const tenantId = userInfo.tenantId || '000000';
+        const tenantId = userInfo.content?.tenantId || userInfo.content?.tenant_id || '000000';
 
         console.log('【租户ID】解析后的userInfo:', userInfo);
         console.log('【租户ID】最终使用的tenantId:', tenantId);

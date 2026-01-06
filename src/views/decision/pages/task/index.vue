@@ -26,11 +26,15 @@
                 multiple
                 collapse-tags
                 clearable
+                :loading="loadingDepartments"
                 style="width: 100%"
               >
-                <el-option label="胸外科" value="dept1" />
-                <el-option label="心内科" value="dept2" />
-                <el-option label="神经外科" value="dept3" />
+                <el-option
+                  v-for="item in departmentOptions"
+                  :key="item.id"
+                  :label="item.deptName"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -40,14 +44,18 @@
               <el-select
                 v-model="searchParams.status"
                 placeholder="请选择"
+                multiple
+                collapse-tags
                 clearable
+                :loading="loadingTaskStatus"
                 style="width: 100%"
               >
-                <el-option label="进行中" value="in_progress" />
-                <el-option label="已撤回" value="withdrawn" />
-                <el-option label="待审批" value="pending" />
-                <el-option label="已拒绝" value="rejected" />
-                <el-option label="已完成" value="completed" />
+                <el-option
+                  v-for="item in taskStatusOptions"
+                  :key="item.id"
+                  :label="item.dictValue"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -58,11 +66,15 @@
                 v-model="searchParams.source"
                 placeholder="请选择"
                 clearable
+                :loading="loadingTaskSource"
                 style="width: 100%"
               >
-                <el-option label="系统生成" value="system" />
-                <el-option label="手动创建" value="manual" />
-                <el-option label="导入" value="import" />
+                <el-option
+                  v-for="item in taskSourceOptions"
+                  :key="item.id"
+                  :label="item.dictValue"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -72,11 +84,20 @@
         <el-row v-if="showMoreSearch" :gutter="20" class="more-search-row">
           <el-col :span="8">
             <el-form-item label="执行人:">
-              <el-input
+              <el-select
                 v-model="searchParams.executor"
-                placeholder="请输入执行人"
+                placeholder="请选择执行人"
                 clearable
-              />
+                :loading="loadingPersons"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in personOptions"
+                  :key="item.id"
+                  :label="item.realName || item.name"
+                  :value="item.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
 
@@ -85,23 +106,38 @@
               <el-select
                 v-model="searchParams.cooperateDept"
                 placeholder="请选择"
+                multiple
+                collapse-tags
                 clearable
+                :loading="loadingDepartments"
                 style="width: 100%"
               >
-                <el-option label="胸外科" value="dept1" />
-                <el-option label="心内科" value="dept2" />
-                <el-option label="神经外科" value="dept3" />
+                <el-option
+                  v-for="item in departmentOptions"
+                  :key="item.id"
+                  :label="item.deptName"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
 
           <el-col :span="8">
             <el-form-item label="配合人:">
-              <el-input
+              <el-select
                 v-model="searchParams.cooperatePerson"
-                placeholder="请输入配合人"
+                placeholder="请选择配合人"
                 clearable
-              />
+                :loading="loadingPersons"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in personOptions"
+                  :key="item.id"
+                  :label="item.realName || item.name"
+                  :value="item.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -192,6 +228,7 @@
 
     <!-- 发起任务对话框 -->
     <create-task-dialog
+      ref="createTaskDialog"
       v-model="showCreateTaskDialog"
       @submit="handleTaskSubmit"
     />
@@ -223,16 +260,24 @@ export default {
         total: 0
       },
       loading: true,
+      loadingTaskStatus: false,
+      loadingTaskSource: false,
+      loadingDepartments: false,
+      loadingPersons: false,
       viewMode: 'list',
       showMoreSearch: false,
       showCreateTaskDialog: false,
+      taskStatusOptions: [], // 任务状态选项
+      taskSourceOptions: [], // 任务来源选项
+      departmentOptions: [], // 部门选项
+      personOptions: [], // 人员选项
       searchParams: {
         title: '',
         departments: [],
-        status: '',
+        status: [],
         source: '',
         executor: '',
-        cooperateDept: '',
+        cooperateDept: [],
         cooperatePerson: '',
         createTimeRange: null
       },
@@ -327,9 +372,151 @@ export default {
     }
   },
   mounted() {
+    this.loadTaskStatus();
+    this.loadTaskSource();
+    this.loadDepartments();
+    this.loadPersons();
     this.onLoad(this.page);
   },
   methods: {
+    // 加载部门列表
+    loadDepartments() {
+      this.loadingDepartments = true;
+
+      // 从本地存储获取 tenantId，优先使用用户信息中的 tenantId
+      let tenantId = '000000'; // 默认租户ID
+      try {
+        const userInfoStr = localStorage.getItem('saber-userInfo');
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr);
+          if (userInfo.content && userInfo.content.tenantId) {
+            tenantId = userInfo.content.tenantId;
+            console.log('【部门列表】使用用户 tenantId:', tenantId);
+          }
+        }
+      } catch (error) {
+        console.warn('【部门列表】获取用户 tenantId 失败，使用默认值:', error);
+      }
+
+      taskApi.getDepartmentList(tenantId)
+        .then(response => {
+          console.log('【部门列表】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            this.departmentOptions = response.data.data || [];
+            console.log('【部门列表】选项数据:', this.departmentOptions);
+          } else {
+            const errorMsg = response.data?.msg || '加载部门列表失败';
+            console.error('【部门列表】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【部门列表】请求异常:', error);
+          this.$message.error('加载部门列表失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingDepartments = false;
+        });
+    },
+
+    // 加载任务状态字典
+    loadTaskStatus() {
+      this.loadingTaskStatus = true;
+      taskApi.getDictionary('oatask-rwbq')
+        .then(response => {
+          console.log('【任务状态】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            this.taskStatusOptions = response.data.data || [];
+            console.log('【任务状态】选项数据:', this.taskStatusOptions);
+          } else {
+            const errorMsg = response.data?.msg || '加载任务状态失败';
+            console.error('【任务状态】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务状态】请求异常:', error);
+          this.$message.error('加载任务状态失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingTaskStatus = false;
+        });
+    },
+
+    // 加载任务来源字典
+    loadTaskSource() {
+      this.loadingTaskSource = true;
+      taskApi.getDictionary('oatask_rwly')
+        .then(response => {
+          console.log('【任务来源】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            this.taskSourceOptions = response.data.data || [];
+            console.log('【任务来源】选项数据:', this.taskSourceOptions);
+          } else {
+            const errorMsg = response.data?.msg || '加载任务来源失败';
+            console.error('【任务来源】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务来源】请求异常:', error);
+          this.$message.error('加载任务来源失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingTaskSource = false;
+        });
+    },
+
+    // 加载人员列表
+    loadPersons() {
+      this.loadingPersons = true;
+
+      // 从本地存储获取 deptId，优先使用用户信息中的 deptId
+      let deptId = null;
+      try {
+        const userInfoStr = localStorage.getItem('saber-userInfo');
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr);
+          if (userInfo.content && userInfo.content.deptId) {
+            deptId = userInfo.content.deptId;
+            console.log('【人员列表】使用用户 deptId:', deptId);
+          } else if (userInfo.content && userInfo.content.dept_id) {
+            deptId = userInfo.content.dept_id;
+            console.log('【人员列表】使用用户 dept_id:', deptId);
+          }
+        }
+      } catch (error) {
+        console.warn('【人员列表】获取用户 deptId 失败:', error);
+      }
+
+      if (!deptId) {
+        console.warn('【人员列表】未找到用户 deptId，跳过加载人员');
+        this.loadingPersons = false;
+        return;
+      }
+
+      taskApi.getDepartmentUsers(deptId)
+        .then(response => {
+          console.log('【人员列表】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            const userList = response.data.data?.userList || response.data.data || [];
+            this.personOptions = userList;
+            console.log('【人员列表】选项数据:', this.personOptions);
+          } else {
+            const errorMsg = response.data?.msg || '加载人员列表失败';
+            console.error('【人员列表】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【人员列表】请求异常:', error);
+          this.$message.error('加载人员列表失败，请检查网络连接');
+        })
+        .finally(() => {
+          this.loadingPersons = false;
+        });
+    },
+
     async onLoad(page, params = {}) {
       this.loading = true;
       try {
@@ -344,28 +531,28 @@ export default {
           requestData.taskName = this.searchParams.title;
         }
 
-        if (this.searchParams.status) {
-          requestData.taskStatus = this.searchParams.status;
+        if (this.searchParams.status && this.searchParams.status.length > 0) {
+          requestData.taskStatusList = this.searchParams.status;
         }
 
         if (this.searchParams.departments && this.searchParams.departments.length > 0) {
-          requestData.executeDeptIds = this.searchParams.departments;
+          requestData.execDeptIdList = this.searchParams.departments;
         }
 
         if (this.searchParams.source) {
-          requestData.taskSource = this.searchParams.source;
+          requestData.taskSourceId = this.searchParams.source;
         }
 
         if (this.searchParams.executor) {
-          requestData.executorName = this.searchParams.executor;
+          requestData.executorid = this.searchParams.executor;
         }
 
-        if (this.searchParams.cooperateDept) {
-          requestData.cooperateDeptId = this.searchParams.cooperateDept;
+        if (this.searchParams.cooperateDept && this.searchParams.cooperateDept.length > 0) {
+          requestData.coopDeptIdList = this.searchParams.cooperateDept;
         }
 
         if (this.searchParams.cooperatePerson) {
-          requestData.cooperatePersonName = this.searchParams.cooperatePerson;
+          requestData.cooperatorId = this.searchParams.cooperatePerson;
         }
 
         if (this.searchParams.createTimeRange && this.searchParams.createTimeRange.length === 2) {
@@ -403,10 +590,10 @@ export default {
       this.searchParams = {
         title: '',
         departments: [],
-        status: '',
+        status: [],
         source: '',
         executor: '',
-        cooperateDept: '',
+        cooperateDept: [],
         cooperatePerson: '',
         createTimeRange: null
       };
@@ -424,9 +611,51 @@ export default {
     },
 
     handleRestart(row) {
-      // 打开创建对话框，预填充数据
-      // TODO: 实现预填充功能
-      this.showCreateTaskDialog = true;
+      // 调用详情 API 获取任务数据
+      taskApi.getTaskDetail(row.id)
+        .then(response => {
+          console.log('【任务详情】API响应:', response);
+          if (response.data && response.data.code === 200) {
+            const taskDetail = response.data.data;
+            console.log('【任务详情】详情数据:', taskDetail);
+
+            // 存储任务数据，打开对话框后由 watch 处理
+            this.$refs.createTaskDialog.pendingTaskDetail = taskDetail;
+            this.showCreateTaskDialog = true;
+          } else {
+            const errorMsg = response.data?.msg || '获取任务详情失败';
+            console.error('【任务详情】错误:', errorMsg);
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务详情】请求异常:', error);
+          let errorMsg = '获取任务详情失败';
+
+          if (!error.response) {
+            errorMsg = '无法连接到服务器，请检查网络';
+          } else {
+            const status = error.response.status;
+            switch (status) {
+              case 401:
+                errorMsg = '认证失败，请检查登录状态';
+                break;
+              case 403:
+                errorMsg = '没有权限访问此任务';
+                break;
+              case 404:
+                errorMsg = '任务不存在';
+                break;
+              case 500:
+                errorMsg = '服务器错误，请稍后重试';
+                break;
+              default:
+                errorMsg = `请求失败 (HTTP ${status})`;
+            }
+          }
+
+          this.$message.error(errorMsg);
+        });
     },
 
     handlePrint(row) {
@@ -443,21 +672,56 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        // 从模拟数据中删除
-        this.mockTasks = this.mockTasks.filter(t => t.id !== row.id);
-        this.$message.success('删除成功');
-        this.onLoad(this.page);
+        // 调用删除 API
+        taskApi.deleteTask(row.id)
+          .then(response => {
+            console.log('【任务删除】API响应:', response);
+            if (response.data && response.data.code === 200) {
+              this.$message.success('删除成功');
+              this.onLoad(this.page);
+            } else {
+              const errorMsg = response.data?.msg || '删除任务失败';
+              console.error('【任务删除】错误:', errorMsg);
+              this.$message.error(errorMsg);
+            }
+          })
+          .catch(error => {
+            console.error('【任务删除】请求异常:', error);
+            let errorMsg = '删除任务失败';
+
+            if (!error.response) {
+              errorMsg = '无法连接到服务器，请检查网络';
+            } else {
+              const status = error.response.status;
+              switch (status) {
+                case 401:
+                  errorMsg = '认证失败，请检查登录状态';
+                  break;
+                case 403:
+                  errorMsg = '没有权限删除此任务';
+                  break;
+                case 404:
+                  errorMsg = '任务不存在';
+                  break;
+                case 500:
+                  errorMsg = '服务器错误，请稍后重试';
+                  break;
+                default:
+                  errorMsg = `请求失败 (HTTP ${status})`;
+              }
+            }
+
+            this.$message.error(errorMsg);
+          });
       }).catch(() => {});
     },
 
     canRestart(row) {
-      // 使用API返回的canRecall标志
-      return row.canRecall === true;
+      return row.canRecall;
     },
 
     canDelete(row) {
-      // 使用API返回的canDel标志
-      return row.canDel === true;
+      return row.canDel;
     }
   }
 };

@@ -34,7 +34,7 @@
                 <el-option
                   v-for="item in taskSourceOptions"
                   :key="item.dictValue"
-                  :label="item.dictLabel"
+                  :label="item.dictValue"
                   :value="item.dictValue"
                 />
               </el-select>
@@ -46,11 +46,12 @@
                 v-model="formData.taskNo"
                 placeholder="请选择任务标签"
                 :loading="loadingTaskTag"
+                @change="handleTaskTagChange"
               >
                 <el-option
                   v-for="item in taskTagOptions"
                   :key="item.dictValue"
-                  :label="item.dictLabel"
+                  :label="item.dictValue"
                   :value="item.dictValue"
                 />
               </el-select>
@@ -79,7 +80,10 @@
 
       <!-- 相关附件 -->
       <div class="section">
-        <div class="section-title">相关附件</div>
+        <div class="section-title">
+          相关附件
+          <span class="required-mark">*</span>
+        </div>
 
         <div class="attachment-section">
           <el-button type="primary" @click="handleSelectFile">
@@ -187,60 +191,60 @@
       <div class="section">
         <div class="section-title">时间信息</div>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="预计完成时间:" required>
-              <div class="time-input-group">
-                <el-date-picker
-                  v-model="formData.expectedCompleteDate"
-                  type="date"
-                  placeholder="选择时间 格式：yyyy-mm-dd"
-                  value-format="YYYY-MM-DD"
-                  style="flex: 1"
-                />
-                <el-select
-                  v-model="formData.expectedCompleteTime"
-                  placeholder="....."
-                  style="width: 100px; margin-left: 10px"
-                >
-                  <el-option label="00:00" value="00:00" />
-                  <el-option label="12:00" value="12:00" />
-                  <el-option label="24:00" value="24:00" />
-                </el-select>
-              </div>
-              <el-tooltip
-                content="截止为24:00，支持逆到其他时间"
-                placement="top"
-                class="help-tooltip"
-              >
-                <i class="el-icon-question"></i>
-              </el-tooltip>
-            </el-form-item>
-          </el-col>
+        <el-form-item label="预计完成时间:" required>
+          <div class="time-input-group">
+            <el-date-picker
+              v-model="formData.expectedCompleteDate"
+              type="date"
+              placeholder="选择日期"
+              value-format="YYYY-MM-DD"
+              style="flex: 1"
+            />
+            <el-select
+              v-model="formData.expectedCompleteTime"
+              placeholder="选择时间"
+              style="width: 120px; margin-left: 10px"
+            >
+              <el-option
+                v-for="time in timeOptions"
+                :key="time"
+                :label="time"
+                :value="time"
+              />
+            </el-select>
+          </div>
+          <el-tooltip
+            content="可选择到24:00，表示当天结束"
+            placement="top"
+            class="help-tooltip"
+          >
+            <i class="el-icon-question"></i>
+          </el-tooltip>
+        </el-form-item>
 
-          <el-col :span="12">
-            <el-form-item label="任务截止时间:" required>
-              <div class="time-input-group">
-                <el-date-picker
-                  v-model="formData.deadlineDate"
-                  type="date"
-                  placeholder="选择时间 格式：yyyy-mm-dd"
-                  value-format="YYYY-MM-DD"
-                  style="flex: 1"
-                />
-                <el-select
-                  v-model="formData.deadlineTime"
-                  placeholder="....."
-                  style="width: 100px; margin-left: 10px"
-                >
-                  <el-option label="00:00" value="00:00" />
-                  <el-option label="12:00" value="12:00" />
-                  <el-option label="24:00" value="24:00" />
-                </el-select>
-              </div>
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="任务截止时间:" required>
+          <div class="time-input-group">
+            <el-date-picker
+              v-model="formData.deadlineDate"
+              type="date"
+              placeholder="选择日期"
+              value-format="YYYY-MM-DD"
+              style="flex: 1"
+            />
+            <el-select
+              v-model="formData.deadlineTime"
+              placeholder="选择时间"
+              style="width: 120px; margin-left: 10px"
+            >
+              <el-option
+                v-for="time in timeOptions"
+                :key="time"
+                :label="time"
+                :value="time"
+              />
+            </el-select>
+          </div>
+        </el-form-item>
       </div>
     </el-form>
 
@@ -295,10 +299,23 @@ export default {
       showSelectCooperatorDialog: false,
       taskSourceOptions: [], // 任务来源选项
       taskTagOptions: [], // 任务标签选项
+      pendingTaskDetail: null, // 待设置的任务详情数据
+      // 生成时间选项：00:00 到 24:00，每30分钟一个
+      timeOptions: (() => {
+        const options = [];
+        for (let h = 0; h < 24; h++) {
+          options.push(`${String(h).padStart(2, '0')}:00`);
+          options.push(`${String(h).padStart(2, '0')}:30`);
+        }
+        options.push('24:00'); // 添加24:00选项
+        return options;
+      })(),
       formData: {
         taskName: '',
         taskSource: '',
+        taskSourceName: '', // 任务来源名称
         taskNo: '',
+        taskTagName: '', // 任务标签名称
         taskContent: '',
         attachments: [],
         executors: [], // [{ id, name, deptId, deptName }, ...]
@@ -314,8 +331,14 @@ export default {
     modelValue(val) {
       if (val) {
         this.initForm();
-        this.loadTaskSource();
-        this.loadTaskTag();
+        // 同时加载任务来源和标签选项
+        Promise.all([this.loadTaskSourceAsync(), this.loadTaskTagAsync()]).then(() => {
+          // 选项加载完成后，如果有待设置的任务数据则设置
+          if (this.pendingTaskDetail) {
+            this.setTaskData(this.pendingTaskDetail);
+            this.pendingTaskDetail = null;
+          }
+        });
       }
     }
   },
@@ -327,6 +350,7 @@ export default {
           console.log('【任务来源】API响应:', response);
           if (response.data && response.data.code === 200) {
             this.taskSourceOptions = response.data.data || [];
+            console.log('【任务来源】选项数据:', JSON.stringify(this.taskSourceOptions, null, 2));
           } else {
             const errorMsg = response.data?.msg || '加载任务来源失败';
             console.error('【任务来源】错误:', errorMsg);
@@ -340,6 +364,57 @@ export default {
         .finally(() => {
           this.loadingTaskSource = false;
         });
+    },
+
+    loadTaskSourceAsync() {
+      return new Promise((resolve) => {
+        this.loadingTaskSource = true;
+        taskApi.getDictionary('oatask_rwly')
+          .then(response => {
+            console.log('【任务来源】API响应:', response);
+            if (response.data && response.data.code === 200) {
+              this.taskSourceOptions = response.data.data || [];
+              console.log('【任务来源】选项数据:', JSON.stringify(this.taskSourceOptions, null, 2));
+            } else {
+              const errorMsg = response.data?.msg || '加载任务来源失败';
+              console.error('【任务来源】错误:', errorMsg);
+            }
+          })
+          .catch(error => {
+            console.error('【任务来源】请求异常:', error);
+          })
+          .finally(() => {
+            this.loadingTaskSource = false;
+            resolve();
+          });
+      });
+    },
+
+
+    loadTaskTagAsync() {
+      return new Promise((resolve) => {
+        this.loadingTaskTag = true;
+        this.taskTagOptions = [];
+
+        taskApi.getDictionary('oatask-rwbq')
+          .then(response => {
+            console.log('【任务标签】API响应:', response);
+            if (response.data && response.data.code === 200) {
+              this.taskTagOptions = response.data.data || [];
+              console.log('【任务标签】选项数据:', JSON.stringify(this.taskTagOptions, null, 2));
+            } else {
+              const errorMsg = response.data?.msg || '加载任务标签失败';
+              console.error('【任务标签】错误:', errorMsg);
+            }
+          })
+          .catch(error => {
+            console.error('【任务标签】请求异常:', error);
+          })
+          .finally(() => {
+            this.loadingTaskTag = false;
+            resolve();
+          });
+      });
     },
 
     loadTaskTag() {
@@ -369,7 +444,9 @@ export default {
       this.formData = {
         taskName: '',
         taskSource: '',
+        taskSourceName: '',
         taskNo: '',
+        taskTagName: '',
         taskContent: '',
         attachments: [],
         executors: [],
@@ -381,8 +458,110 @@ export default {
       };
     },
 
+    setTaskData(taskDetail) {
+      // 从任务详情数据预填充表单
+      console.log('【预填充数据】接收的任务详情:', taskDetail);
+      console.log('【预填充数据】当前 taskSourceOptions:', this.taskSourceOptions);
+      console.log('【预填充数据】当前 taskTagOptions:', this.taskTagOptions);
+
+      // 根据名称查找任务来源ID
+      let taskSourceId = '';
+      if (taskDetail.taskSourceName) {
+        const sourceOption = this.taskSourceOptions.find(item => item.dictValue === taskDetail.taskSourceName);
+        console.log('【预填充数据】查找任务来源 - 搜索值:', taskDetail.taskSourceName, '结果:', sourceOption);
+        taskSourceId = sourceOption ? sourceOption.id : '';
+      }
+
+      // 根据名称查找任务标签ID
+      let taskTagId = '';
+      if (taskDetail.taskTagName) {
+        const tagOption = this.taskTagOptions.find(item => item.dictValue === taskDetail.taskTagName);
+        console.log('【预填充数据】查找任务标签 - 搜索值:', taskDetail.taskTagName, '结果:', tagOption);
+        taskTagId = tagOption ? tagOption.id : '';
+      }
+
+      // 提取执行人（来自 executorList）
+      const executors = [];
+      if (taskDetail.executorList && Array.isArray(taskDetail.executorList)) {
+        taskDetail.executorList.forEach(deptGroup => {
+          if (deptGroup.receiverList && Array.isArray(deptGroup.receiverList)) {
+            deptGroup.receiverList.forEach(person => {
+              if (person.receiverType === '1' || person.receiverType === 1) {
+                executors.push({
+                  id: person.userId,
+                  name: person.userName,
+                  deptId: deptGroup.deptId,
+                  deptName: deptGroup.deptName
+                });
+              }
+            });
+          }
+        });
+      }
+
+      // 提取配合人（来自 cooperatorList）
+      const cooperators = [];
+      if (taskDetail.cooperatorList && Array.isArray(taskDetail.cooperatorList)) {
+        taskDetail.cooperatorList.forEach(deptGroup => {
+          if (deptGroup.receiverList && Array.isArray(deptGroup.receiverList)) {
+            deptGroup.receiverList.forEach(person => {
+              if (person.receiverType === '2' || person.receiverType === 2) {
+                cooperators.push({
+                  id: person.userId,
+                  name: person.userName,
+                  deptId: deptGroup.deptId,
+                  deptName: deptGroup.deptName
+                });
+              }
+            });
+          }
+        });
+      }
+
+      // 解析时间
+      const parseDateTime = (dateTimeStr) => {
+        if (!dateTimeStr) return { date: null, time: '24:00' };
+        const parts = dateTimeStr.split(' ');
+        return {
+          date: parts[0],
+          time: parts[1] ? parts[1].substring(0, 5) : '24:00'
+        };
+      };
+
+      const expectFinish = parseDateTime(taskDetail.expectFinishTime);
+      const deadline = parseDateTime(taskDetail.deadlineTime);
+
+      this.formData = {
+        taskName: taskDetail.taskName || '',
+        taskSource: taskSourceId,
+        taskSourceName: taskDetail.taskSourceName || '',
+        taskNo: taskTagId,
+        taskTagName: taskDetail.taskTagName || '',
+        taskContent: taskDetail.taskContent || '',
+        attachments: [], // 附件暂不处理
+        executors: executors,
+        cooperators: cooperators,
+        expectedCompleteDate: expectFinish.date,
+        expectedCompleteTime: expectFinish.time,
+        deadlineDate: deadline.date,
+        deadlineTime: deadline.time
+      };
+
+      console.log('【预填充数据】填充后的表单:', this.formData);
+    },
+
     handleTaskSourceChange() {
-      // 任务来源变化时，监听器会自动处理任务标签的加载
+      // 获取任务来源名称并赋值（dictValue 既是值也是显示文本）
+      const option = this.taskSourceOptions.find(item => item.dictValue == this.formData.taskSource);
+      this.formData.taskSourceName = option ? option.dictValue : '';
+      console.log('【任务来源变化】ID:', this.formData.taskSource, 'Name:', this.formData.taskSourceName, 'Option:', option);
+    },
+
+    handleTaskTagChange() {
+      // 获取任务标签名称并赋值（dictValue 既是值也是显示文本）
+      const option = this.taskTagOptions.find(item => item.dictValue == this.formData.taskNo);
+      this.formData.taskTagName = option ? option.dictValue : '';
+      console.log('【任务标签变化】ID:', this.formData.taskNo, 'Name:', this.formData.taskTagName, 'Option:', option);
     },
 
     handleSelectFile() {
@@ -424,11 +603,14 @@ export default {
                 attachmentItem.status = 'success';
                 attachmentItem.attachmentId = response.data.data?.id || response.data.data;
                 console.log('【文件上传】✓ 上传成功，ID:', attachmentItem.attachmentId);
+                // 强制更新视图
+                this.$forceUpdate();
               } else {
                 attachmentItem.status = 'error';
                 const errorMsg = response.data?.msg || '上传文件失败';
                 console.error('【文件上传】✗ 服务器返回错误:', response.data);
                 this.$message.error(errorMsg);
+                this.$forceUpdate();
               }
             })
             .catch(error => {
@@ -462,6 +644,7 @@ export default {
               }
 
               this.$message.error(errorMsg);
+              this.$forceUpdate();
             });
         }
       };
@@ -469,7 +652,59 @@ export default {
     },
 
     handlePreviewFile(file) {
-      this.$message.info(`预览功能开发中: ${file.name}`);
+      if (!file.file || file.status !== 'success') {
+        this.$message.warning('文件未上传成功，无法预览');
+        return;
+      }
+
+      const fileName = file.name.toLowerCase();
+      const fileType = fileName.substring(fileName.lastIndexOf('.') + 1);
+
+      // 图片类型直接预览
+      if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(fileType)) {
+        const imageUrl = URL.createObjectURL(file.file);
+        const previewWindow = window.open('', '_blank');
+        if (previewWindow) {
+          previewWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>${file.name} - 图片预览</title>
+              <style>
+                body { margin: 0; padding: 20px; background: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+                img { max-width: 100%; max-height: 100vh; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+              </style>
+            </head>
+            <body>
+              <img src="${imageUrl}" alt="${file.name}" />
+            </body>
+            </html>
+          `);
+          previewWindow.document.close();
+        }
+        return;
+      }
+
+      // PDF 类型
+      if (fileType === 'pdf') {
+        const pdfUrl = URL.createObjectURL(file.file);
+        window.open(pdfUrl, '_blank');
+        return;
+      }
+
+      // 其他文件类型提示下载
+      if (['doc', 'docx', 'xls', 'xlsx'].includes(fileType)) {
+        this.$message.info(`${fileType.toUpperCase()} 文件需要下载后使用相应软件打开查看`);
+        // 触发下载
+        const downloadUrl = URL.createObjectURL(file.file);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = file.name;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+      } else {
+        this.$message.warning('该文件类型暂不支持预览');
+      }
     },
 
     handleRemoveFile(index) {
@@ -542,6 +777,12 @@ export default {
         return;
       }
 
+      // 检查是否至少上传了一个附件
+      if (this.formData.attachments.length === 0) {
+        this.$message.warning('请至少上传一个附件');
+        return;
+      }
+
       // 检查是否有上传失败的文件
       const failedAttachments = this.formData.attachments.filter(a => a.status === 'error');
       if (failedAttachments.length > 0) {
@@ -561,6 +802,9 @@ export default {
       // 转换时间格式为 YYYY-MM-DD HH:MM:SS
       const formatDateTime = (date, time) => {
         if (!date) return null;
+
+        console.log('【时间格式化】输入 - date:', date, 'time:', time);
+
         let hour = time.split(':')[0];
         let minute = time.split(':')[1] || '00';
 
@@ -575,7 +819,9 @@ export default {
         const month = String(dateObj.getMonth() + 1).padStart(2, '0');
         const day = String(dateObj.getDate()).padStart(2, '0');
 
-        return `${year}-${month}-${day} ${hour}:${minute}:00`;
+        const result = `${year}-${month}-${day} ${hour}:${minute}:00`;
+        console.log('【时间格式化】输出:', result);
+        return result;
       };
 
       // 构建接收人列表
@@ -604,20 +850,43 @@ export default {
       });
 
       // 构建提交数据
+      // 确保taskSourceName和taskTagName不为空（failsafe机制，使用宽松比较）
+      let taskSourceName = this.formData.taskSourceName;
+      console.log('【Failsafe检查】taskSourceName:', taskSourceName);
+      console.log('【Failsafe检查】taskSourceOptions:', this.taskSourceOptions);
+      console.log('【Failsafe检查】taskSource ID:', this.formData.taskSource);
+
+      if (!taskSourceName) {
+        const sourceOption = this.taskSourceOptions.find(item => item.dictValue == this.formData.taskSource);
+        taskSourceName = sourceOption ? sourceOption.dictValue : '';
+        console.log('【Failsafe修复】找到的option:', sourceOption, '最终Name:', taskSourceName);
+      }
+
+      let taskTagName = this.formData.taskTagName;
+      console.log('【Failsafe检查】taskTagName:', taskTagName);
+      console.log('【Failsafe检查】taskTagOptions:', this.taskTagOptions);
+      console.log('【Failsafe检查】taskNo ID:', this.formData.taskNo);
+
+      if (!taskTagName) {
+        const tagOption = this.taskTagOptions.find(item => item.dictValue == this.formData.taskNo);
+        taskTagName = tagOption ? tagOption.dictValue : '';
+        console.log('【Failsafe修复】找到的option:', tagOption, '最终Name:', taskTagName);
+      }
+
       const submitData = {
-        taskName: this.formData.taskName,
-        taskSourceId: this.formData.taskSource,
-        taskSourceName: this.getTaskSourceName(this.formData.taskSource),
-        taskTagId: this.formData.taskNo,
-        taskTagName: this.getTaskTagName(this.formData.taskNo),
-        taskContent: this.formData.taskContent,
-        taskType: '1', // 默认值，可根据需要更改
-        expectFinishTime: formatDateTime(this.formData.expectedCompleteDate, this.formData.expectedCompleteTime),
-        deadlineTime: formatDateTime(this.formData.deadlineDate, this.formData.deadlineTime),
-        attachmentIdList: this.formData.attachments
+        taskName: this.formData.taskName, // 任务名称（必填）
+        taskSourceId: this.formData.taskSource, // 任务来源ID（必填）
+        taskSourceName: taskSourceName, // 任务来源名称（必填）
+        taskTagId: this.formData.taskNo, // 任务标签ID（必填）
+        taskTagName: taskTagName, // 任务标签名称（必填）
+        taskContent: this.formData.taskContent, // 任务内容（必填）
+        taskType: '1', // 任务类型（必填）
+        expectFinishTime: formatDateTime(this.formData.expectedCompleteDate, this.formData.expectedCompleteTime), // 预计完成时间，格式: YYYY-MM-DD HH:MM:SS（必填）
+        deadlineTime: formatDateTime(this.formData.deadlineDate, this.formData.deadlineTime), // 任务截止时间，格式: YYYY-MM-DD HH:MM:SS（必填）
+        attachmentIdList: this.formData.attachments // 附件ID列表（可选）
           .filter(a => a.status === 'success' && a.attachmentId)
           .map(a => a.attachmentId),
-        receiverList: receiverList
+        receiverList: receiverList // 任务接收人员列表（必填，至少1条）
       };
 
       console.log('【任务发起】提交数据:', submitData);
@@ -671,14 +940,14 @@ export default {
 
     // 获取任务来源名称
     getTaskSourceName(value) {
-      const option = this.taskSourceOptions.find(item => item.dictValue === value);
-      return option ? option.dictLabel : value;
+      const option = this.taskSourceOptions.find(item => item.dictValue == value);
+      return option ? option.dictValue : value;
     },
 
     // 获取任务标签名称
     getTaskTagName(value) {
-      const option = this.taskTagOptions.find(item => item.dictValue === value);
-      return option ? option.dictLabel : value;
+      const option = this.taskTagOptions.find(item => item.dictValue == value);
+      return option ? option.dictValue : value;
     }
   }
 };
@@ -704,6 +973,11 @@ export default {
       margin-bottom: 15px;
       padding-bottom: 10px;
       border-bottom: 1px solid #e5e5e5;
+
+      .required-mark {
+        color: #ff4d4f;
+        margin-left: 4px;
+      }
     }
   }
 

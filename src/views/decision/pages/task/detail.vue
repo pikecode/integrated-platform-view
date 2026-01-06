@@ -1,16 +1,9 @@
 <template>
   <div class="task-detail-page">
-    <el-card class="box-card">
-      <!-- 页面头部 -->
-      <template #header>
-        <div class="card-header">
-          <div class="title-section">
-            <el-button type="primary" text @click="handleGoBack"> ← 返回 </el-button>
-            <span class="page-title">任务详情</span>
-          </div>
-        </div>
-      </template>
+    <!-- 面包屑导航 -->
+    <decision-breadcrumb :breadcrumbs="['任务管理', '我发布的', '任务详情']" />
 
+    <el-card class="box-card">
       <!-- 加载状态 -->
       <div v-if="loading" class="loading-container">
         <el-icon class="is-loading"><Loading /></el-icon>
@@ -19,162 +12,171 @@
 
       <!-- 主内容 -->
       <div v-else-if="taskDetail" class="detail-content">
+        <!-- 任务进度流程条 -->
+        <div class="progress-flow">
+          <div class="flow-container">
+            <div class="flow-line"></div>
+            <div
+              v-for="stage in taskStages"
+              :key="stage.id"
+              class="flow-item"
+              :class="{
+                completed: stage.id < parseInt(taskDetail.currentStage),
+                active: stage.id === parseInt(taskDetail.currentStage),
+                pending: stage.id > parseInt(taskDetail.currentStage),
+              }"
+            >
+              <div class="flow-circle">
+                <span>{{ stage.id }}</span>
+              </div>
+              <div class="flow-info">
+                <div class="flow-title">{{ stage.name }}</div>
+                <div class="flow-status">{{ getStageStatus(stage.id) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 基本信息 -->
-        <div class="section">
-          <div class="section-title">基本信息</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">任务名称：</span>
-              <span class="value">{{ taskDetail.taskName }}</span>
+        <div class="basic-info-section">
+         
+
+          <!-- 标题和右上角提示 -->
+          <div class="header-content">
+            <div class="title-area">
+              <h2 class="task-title">{{ taskDetail.taskName }}</h2>
+              <div class="task-source">任务来源：{{ taskDetail.taskSourceName }}</div>
             </div>
-            <div class="info-item">
-              <span class="label">任务来源：</span>
-              <span class="value">{{ taskDetail.taskSourceName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">任务标签：</span>
-              <span class="value">{{ taskDetail.taskTagName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">任务状态：</span>
-              <el-tag :type="getStatusType(taskDetail.taskStatus)">
-                {{ taskDetail.taskStatusName }}
-              </el-tag>
-            </div>
-            <div class="info-item">
-              <span class="label">发布者：</span>
-              <span class="value">{{ taskDetail.publishUserName }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">当前阶段：</span>
-              <span class="value">{{ taskDetail.currentStageName }}</span>
-            </div>
-            <div class="info-item full-width">
-              <span class="label">创建时间：</span>
-              <span class="value">{{ formatDateTime(taskDetail.createTime) }}</span>
+            <div class="countdown-alert" v-if="taskDetail.taskFinishCountdown">
+              <div class="countdown-value">倒计时：{{ taskDetail.taskFinishCountdown }}</div>
             </div>
           </div>
-        </div>
 
-        <!-- 任务内容 -->
-        <div class="section">
-          <div class="section-title">任务内容</div>
-          <div class="task-content-section">
-            {{ taskDetail.taskContent || '暂无任务内容' }}
-          </div>
-        </div>
-
-        <!-- 时间信息 -->
-        <div class="section">
-          <div class="section-title">时间信息</div>
-          <div class="info-grid">
-            <div class="info-item">
-              <span class="label">预计完成时间：</span>
-              <span class="value">{{ formatDateTime(taskDetail.expectFinishTime) }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">截止时间：</span>
-              <span class="value">{{ formatDateTime(taskDetail.deadlineTime) }}</span>
-            </div>
-            <div class="info-item" v-if="taskDetail.taskFinishCountdown">
-              <span class="label">完成倒计时：</span>
-              <span class="value countdown">{{ taskDetail.taskFinishCountdown }}</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 执行人员 -->
-        <div class="section">
-          <div class="section-title">执行人员</div>
-          <div v-if="taskDetail.executorList && taskDetail.executorList.length > 0" class="personnel-list">
-            <div v-for="dept in taskDetail.executorList" :key="dept.deptId" class="dept-group">
-              <div class="dept-name">{{ dept.deptName }}</div>
-              <div class="receiver-list">
-                <el-tag
-                  v-for="person in dept.receiverList"
-                  :key="person.id"
-                  :type="getReceiveStatusType(person.receiveStatus)"
-                  class="person-tag"
+          <!-- 执行人和配合人信息 -->
+          <div class="personnel-info">
+            <!-- 执行人信息 -->
+            <div class="personnel-column">
+              <div class="personnel-title">执行科室及执行人：</div>
+              <div v-if="taskDetail.executorList && taskDetail.executorList.length > 0">
+                <div
+                  v-for="(dept, deptIdx) in taskDetail.executorList"
+                  :key="deptIdx"
+                  class="personnel-group"
                 >
-                  {{ person.userName }} ({{ getReceiveStatusName(person.receiveStatus) }})
-                </el-tag>
-              </div>
-            </div>
-          </div>
-          <div v-else class="empty-state">暂无执行人员</div>
-        </div>
-
-        <!-- 配合人员 -->
-        <div class="section">
-          <div class="section-title">配合人员</div>
-          <div v-if="taskDetail.cooperatorList && taskDetail.cooperatorList.length > 0" class="personnel-list">
-            <div v-for="dept in taskDetail.cooperatorList" :key="dept.deptId" class="dept-group">
-              <div class="dept-name">{{ dept.deptName }}</div>
-              <div class="receiver-list">
-                <el-tag
-                  v-for="person in dept.receiverList"
-                  :key="person.id"
-                  :type="getReceiveStatusType(person.receiveStatus)"
-                  class="person-tag"
-                >
-                  {{ person.userName }} ({{ getReceiveStatusName(person.receiveStatus) }})
-                </el-tag>
-              </div>
-            </div>
-          </div>
-          <div v-else class="empty-state">暂无配合人员</div>
-        </div>
-
-        <!-- 附件列表 -->
-        <div class="section">
-          <div class="section-title">附件列表</div>
-          <div v-if="taskDetail.attachmentList && taskDetail.attachmentList.length > 0" class="attachment-list">
-            <div v-for="attachment in taskDetail.attachmentList" :key="attachment.id" class="attachment-item">
-              <div class="attachment-info">
-                <div class="file-name">{{ attachment.fileName }}</div>
-                <div class="file-meta">
-                  {{ formatFileSize(attachment.fileSize) }} · {{ attachment.uploadUserName }} · {{ formatDateTime(attachment.uploadTime) }}
+                  <div class="group-item">
+                    <span class="dept-label">{{ String.fromCharCode(10120 + deptIdx) }}</span>
+                    <span class="dept-names">{{ getDeptPersonNames(dept) }}</span>
+                  </div>
+                  <div class="group-leader">分管领导：{{ getDeptLeader(dept) }}</div>
                 </div>
               </div>
-              <el-button type="primary" text size="small" @click="handleDownloadFile(attachment)">
-                下载
-              </el-button>
+            </div>
+
+            <!-- 配合人信息 -->
+            <div class="personnel-column">
+              <div class="personnel-title">配合科室及配合人：</div>
+              <div v-if="taskDetail.cooperatorList && taskDetail.cooperatorList.length > 0">
+                <div
+                  v-for="(dept, deptIdx) in taskDetail.cooperatorList"
+                  :key="deptIdx"
+                  class="personnel-group"
+                >
+                  <div class="group-item">
+                    <span class="dept-label">{{ String.fromCharCode(10120 + deptIdx) }}</span>
+                    <span class="dept-names">{{ getDeptPersonNames(dept) }}</span>
+                  </div>
+                  <div class="group-leader">分管领导：{{ getDeptLeader(dept) }}</div>
+                </div>
+              </div>
             </div>
           </div>
-          <div v-else class="empty-state">暂无附件</div>
+
+          <!-- 任务内容 -->
+          <div class="basic-info-content">
+            <div class="content-label">任务内容：</div>
+            <div class="content-text">
+              {{ taskDetail.taskContent || '暂无任务内容' }}
+            </div>
+          </div>
+
+          <!-- 附件列表 -->
+          <div class="basic-info-attachments" v-if="taskDetail.attachmentList && taskDetail.attachmentList.length > 0">
+            <div class="content-label">任务附件</div>
+            <div class="attachment-list">
+              <div
+                v-for="attachment in taskDetail.attachmentList"
+                :key="attachment.id"
+                class="attachment-item"
+              >
+                <div class="attachment-info">
+                  <div class="file-name">{{ attachment.fileName }}</div>
+                  <div class="file-meta">
+                    {{ formatFileSize(attachment.fileSize) }} · {{ attachment.uploadUserName }} ·
+                    {{ formatDateTime(attachment.uploadTime) }}
+                  </div>
+                </div>
+                <el-button type="primary" text size="small" @click="handleDownloadFile(attachment)">
+                  下载
+                </el-button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 接收情况统计 -->
+  
+
+        <!-- 任务接收情况 -->
         <div class="section">
-          <div class="section-title">接收情况统计</div>
+          <div class="section-title">任务接收情况</div>
           <div v-if="taskDetail.receiveRate" class="receive-rate-section">
-            <div class="rate-summary">
-              <div class="rate-item">
-                <div class="rate-value" style="color: #52c41a">{{ taskDetail.receiveRate.receivedCount }}</div>
-                <div class="rate-label">已接收</div>
+            <!-- 已接收 -->
+            <div
+              v-if="
+                taskDetail.receiveRate.receivedUserList &&
+                taskDetail.receiveRate.receivedUserList.length > 0
+              "
+              class="receive-status-row"
+            >
+              <div class="status-label">
+                <span class="status-text">已接收</span>
+                <span class="status-count">
+                  ({{ taskDetail.receiveRate.receivedCount }}/{{ taskDetail.receiveRate.totalCount }})
+                </span>
               </div>
-              <div class="rate-item">
-                <div class="rate-value" style="color: #ff4d4f">{{ taskDetail.receiveRate.rejectedCount }}</div>
-                <div class="rate-label">已拒绝</div>
-              </div>
-              <div class="rate-item">
-                <div class="rate-value" style="color: #1890ff">{{ taskDetail.receiveRate.totalCount }}</div>
-                <div class="rate-label">总计</div>
+              <div class="user-names">
+                <span
+                  v-for="(user, index) in taskDetail.receiveRate.receivedUserList"
+                  :key="user.id"
+                  class="user-name"
+                >
+                  {{ user.userName }}<span v-if="index < taskDetail.receiveRate.receivedUserList.length - 1" class="separator">、</span>
+                </span>
               </div>
             </div>
 
-            <div v-if="taskDetail.receiveRate.receivedUserList && taskDetail.receiveRate.receivedUserList.length > 0" class="receive-users">
-              <div class="user-title">已接收人员</div>
-              <el-tag v-for="user in taskDetail.receiveRate.receivedUserList" :key="user.id" type="success" class="user-tag">
-                {{ user.userName }}
-              </el-tag>
-            </div>
-
-            <div v-if="taskDetail.receiveRate.rejectedUserList && taskDetail.receiveRate.rejectedUserList.length > 0" class="reject-users">
-              <div class="user-title">已拒绝人员</div>
-              <el-tag v-for="user in taskDetail.receiveRate.rejectedUserList" :key="user.id" type="danger" class="user-tag">
-                {{ user.userName }}
-              </el-tag>
+            <!-- 已拒绝 -->
+            <div
+              v-if="
+                taskDetail.receiveRate.rejectedUserList &&
+                taskDetail.receiveRate.rejectedUserList.length > 0
+              "
+              class="receive-status-row"
+            >
+              <div class="status-label">
+                <span class="status-text">已拒绝</span>
+                <span class="status-count">
+                  ({{ taskDetail.receiveRate.rejectedCount }}/{{ taskDetail.receiveRate.totalCount }})
+                </span>
+              </div>
+              <div class="user-names">
+                <span
+                  v-for="(user, index) in taskDetail.receiveRate.rejectedUserList"
+                  :key="user.id"
+                  class="user-name"
+                >
+                  {{ user.userName }}<span v-if="index < taskDetail.receiveRate.rejectedUserList.length - 1" class="separator">、</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -182,18 +184,35 @@
         <!-- 进度列表 -->
         <div class="section">
           <div class="section-title">任务进度</div>
-          <div v-if="taskDetail.progressList && taskDetail.progressList.length > 0" class="progress-timeline">
-            <div v-for="progress in taskDetail.progressList" :key="progress.id" class="timeline-item">
+          <div
+            v-if="taskDetail.progressList && taskDetail.progressList.length > 0"
+            class="progress-timeline"
+          >
+            <div
+              v-for="progress in taskDetail.progressList"
+              :key="progress.id"
+              class="timeline-item"
+            >
               <div class="timeline-dot"></div>
               <div class="timeline-content">
                 <div class="progress-header">
                   <span class="stage-name">{{ progress.progressStageName }}</span>
-                  <span class="operator-info">{{ progress.operatorName }} · {{ progress.operatorTypeName }}</span>
+                  <span class="operator-info"
+                    >{{ progress.operatorName }} · {{ progress.operatorTypeName }}</span
+                  >
                 </div>
                 <div class="progress-time">{{ formatDateTime(progress.createTime) }}</div>
-                <div v-if="progress.attachmentVOList && progress.attachmentVOList.length > 0" class="progress-attachments">
+                <div
+                  v-if="progress.attachmentVOList && progress.attachmentVOList.length > 0"
+                  class="progress-attachments"
+                >
                   <div class="attachment-label">进度附件：</div>
-                  <el-tag v-for="attachment in progress.attachmentVOList" :key="attachment.id" type="info" class="progress-file">
+                  <el-tag
+                    v-for="attachment in progress.attachmentVOList"
+                    :key="attachment.id"
+                    type="info"
+                    class="progress-file"
+                  >
                     {{ attachment.fileName }}
                   </el-tag>
                 </div>
@@ -213,16 +232,24 @@
 <script>
 import { Loading } from '@element-plus/icons-vue';
 import * as taskApi from '@/api/decision/task';
+import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 
 export default {
   name: 'TaskDetail',
   components: {
-    Loading
+    Loading,
+    DecisionBreadcrumb,
   },
   data() {
     return {
       taskDetail: null,
-      loading: false
+      loading: false,
+      taskStages: [
+        { id: 1, name: '任务新增' },
+        { id: 2, name: '任务接收' },
+        { id: 3, name: '任务反馈' },
+        { id: 4, name: '任务完成' },
+      ],
     };
   },
   watch: {
@@ -232,13 +259,14 @@ export default {
           this.loadTaskDetail(newVal);
         }
       },
-      immediate: true
-    }
+      immediate: true,
+    },
   },
   methods: {
     loadTaskDetail(taskId) {
       this.loading = true;
-      taskApi.getTaskDetail(taskId)
+      taskApi
+        .getTaskDetail(taskId)
         .then(response => {
           console.log('【任务详情】API响应:', response);
           if (response.data && response.data.code === 200 && response.data.success) {
@@ -301,34 +329,61 @@ export default {
 
     getStatusType(status) {
       const typeMap = {
-        'pending': 'info',
-        'in_progress': 'warning',
-        'completed': 'success',
-        'rejected': 'danger'
+        pending: 'info',
+        in_progress: 'warning',
+        completed: 'success',
+        rejected: 'danger',
       };
       return typeMap[status] || 'info';
     },
 
     getReceiveStatusType(status) {
       const typeMap = {
-        '1': 'success',
-        '2': 'warning',
-        '3': 'danger',
-        '30': 'info',
-        '32': 'success'
+        1: 'success',
+        2: 'warning',
+        3: 'danger',
+        30: 'info',
+        32: 'success',
       };
       return typeMap[status] || 'info';
     },
 
     getReceiveStatusName(status) {
       const nameMap = {
-        '1': '已接收',
-        '2': '已转办',
-        '3': '已拒绝',
-        '30': '待接收',
-        '32': '已接收'
+        1: '已接收',
+        2: '已转办',
+        3: '已拒绝',
+        30: '待接收',
+        32: '已接收',
       };
       return nameMap[status] || '未知';
+    },
+
+    getStageStatus(stageId) {
+      const currentStage = parseInt(this.taskDetail.currentStage);
+      if (stageId < currentStage) {
+        return '完成';
+      } else if (stageId === currentStage) {
+        return '进行中';
+      } else {
+        return '未开始';
+      }
+    },
+
+    getDeptPersonNames(deptGroup) {
+      if (!deptGroup.receiverList || deptGroup.receiverList.length === 0) {
+        return '暂无';
+      }
+      const names = deptGroup.receiverList.map(person => person.userName);
+      return names.join('、');
+    },
+
+    getDeptLeader(deptGroup) {
+      // 取第一个人作为分管领导（实际应该从 API 中获取）
+      if (deptGroup.receiverList && deptGroup.receiverList.length > 0) {
+        return deptGroup.receiverList[0].userName;
+      }
+      return '暂无';
     },
 
     handleDownloadFile(attachment) {
@@ -337,16 +392,13 @@ export default {
 
     handleGoBack() {
       this.$router.go(-1);
-    }
-  }
+    },
+  },
 };
 </script>
 
 <style scoped lang="scss">
 .task-detail-page {
-  padding: 20px;
-  background-color: #f5f7fa;
-
   @media (max-width: 768px) {
     padding: 12px;
   }
@@ -384,6 +436,329 @@ export default {
   }
 
   .detail-content {
+    .basic-info-section {
+      position: relative;
+      padding: 24px;
+      background-color: #fff;
+      border-radius: 4px;
+      margin-bottom: 30px;
+      border: 1px solid #e5e5e5;
+
+      .stage-badge {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 40px;
+        background-color: #409eff;
+        border-radius: 0;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        margin-left: 12px;
+
+        .title-area {
+          flex: 1;
+
+          .task-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+          }
+
+          .task-source {
+            font-size: 14px;
+            color: #666;
+          }
+        }
+
+        .countdown-alert {
+          background-color: #ffe0ec;
+          padding: 12px 16px;
+          border-radius: 4px;
+          min-width: 200px;
+          text-align: center;
+
+          .alert-content {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+          }
+
+          .countdown-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #ff4d4f;
+          }
+        }
+      }
+
+      .personnel-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 32px;
+        margin-bottom: 24px;
+        margin-left: 12px;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+
+        .personnel-column {
+          .personnel-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            padding-left: 4px;
+            border-left: 3px solid #409eff;
+          }
+
+          .personnel-group {
+            margin-bottom: 16px;
+            font-size: 13px;
+
+            .group-item {
+              display: flex;
+              margin-bottom: 4px;
+              color: #333;
+
+              .dept-label {
+                font-weight: 600;
+                color: #409eff;
+                margin-right: 8px;
+                min-width: 20px;
+              }
+
+              .dept-names {
+                color: #333;
+              }
+            }
+
+            .group-leader {
+              margin-left: 28px;
+              color: #666;
+              font-size: 12px;
+            }
+          }
+        }
+      }
+
+      .basic-info-content {
+        margin-left: 12px;
+
+        .content-label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #333;
+          margin-bottom: 8px;
+        }
+
+        .content-text {
+          font-size: 14px;
+          color: #666;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+      }
+
+      .basic-info-attachments {
+        margin-left: 12px;
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 1px solid #e5e5e5;
+
+        .content-label {
+          font-size: 14px;
+          font-weight: 500;
+          color: #333;
+          margin-bottom: 12px;
+        }
+
+        .attachment-list {
+          .attachment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            gap: 12px;
+
+            @media (max-width: 480px) {
+              flex-direction: column;
+            }
+
+            .attachment-info {
+              flex: 1;
+              min-width: 0;
+
+              .file-name {
+                color: #333;
+                font-weight: 500;
+                margin-bottom: 4px;
+                word-break: break-word;
+              }
+
+              .file-meta {
+                font-size: 12px;
+                color: #999;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .progress-flow {
+      margin-bottom: 40px;
+      padding: 24px 0;
+      background-color: #f9fafb;
+      border-radius: 4px;
+
+      .flow-container {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 0 20px;
+
+        .flow-line {
+          position: absolute;
+          top: 24px;
+          left: 60px;
+          right: 60px;
+          height: 2px;
+          background: linear-gradient(to right, #409eff 0%, #409eff 50%, #bfbfbf 50%, #bfbfbf 100%);
+          z-index: 0;
+        }
+
+        .flow-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+          position: relative;
+          z-index: 1;
+
+          .flow-circle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 12px;
+            border: 2px solid #409eff;
+            background-color: #fff;
+            color: #409eff;
+
+            span {
+              display: block;
+            }
+          }
+
+          .flow-info {
+            text-align: center;
+
+            .flow-title {
+              font-size: 14px;
+              font-weight: 500;
+              color: #333;
+              margin-bottom: 4px;
+            }
+
+            .flow-status {
+              font-size: 12px;
+              color: #999;
+            }
+          }
+
+          &.completed {
+            .flow-circle {
+              background-color: #409eff;
+              color: #fff;
+              border-color: #409eff;
+            }
+
+            .flow-status {
+              color: #52c41a;
+              font-weight: 500;
+            }
+          }
+
+          &.active {
+            .flow-circle {
+              background-color: #409eff;
+              color: #fff;
+              border-color: #409eff;
+              box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.2);
+            }
+
+            .flow-status {
+              color: #ff9c6e;
+              font-weight: 500;
+            }
+          }
+
+          &.pending {
+            .flow-circle {
+              background-color: #f5f5f5;
+              color: #bfbfbf;
+              border-color: #bfbfbf;
+            }
+
+            .flow-status {
+              color: #bfbfbf;
+            }
+          }
+        }
+      }
+
+      @media (max-width: 768px) {
+        padding: 16px 0;
+
+        .flow-container {
+          padding: 0 12px;
+
+          .flow-line {
+            left: 30px;
+            right: 30px;
+          }
+
+          .flow-item {
+            .flow-circle {
+              width: 40px;
+              height: 40px;
+              font-size: 14px;
+              margin-bottom: 8px;
+            }
+
+            .flow-info {
+              .flow-title {
+                font-size: 12px;
+              }
+
+              .flow-status {
+                font-size: 11px;
+              }
+            }
+          }
+        }
+      }
+    }
+
     .section {
       margin-bottom: 30px;
 
@@ -514,59 +889,55 @@ export default {
     }
 
     .receive-rate-section {
-      .rate-summary {
+      .receive-status-row {
         display: flex;
-        gap: 40px;
-        margin-bottom: 20px;
-        padding: 20px;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding: 12px;
         background-color: #f9f9f9;
         border-radius: 4px;
-        justify-content: space-around;
+        gap: 24px;
 
         @media (max-width: 768px) {
-          gap: 20px;
-          padding: 16px;
-        }
-
-        @media (max-width: 480px) {
           flex-direction: column;
-          gap: 16px;
+          gap: 8px;
         }
 
-        .rate-item {
-          text-align: center;
+        .status-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+          min-width: max-content;
 
-          .rate-value {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
+          .status-text {
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+          }
 
-            @media (max-width: 480px) {
-              font-size: 24px;
+          .status-count {
+            color: #666;
+            font-size: 13px;
+          }
+        }
+
+        .user-names {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 4px;
+          flex: 1;
+
+          .user-name {
+            color: #333;
+            font-size: 14px;
+
+            .separator {
+              margin: 0 2px;
+              color: #999;
             }
           }
-
-          .rate-label {
-            font-size: 14px;
-            color: #666;
-          }
-        }
-      }
-
-      .receive-users,
-      .reject-users {
-        margin-bottom: 16px;
-
-        .user-title {
-          font-weight: 500;
-          color: #666;
-          margin-bottom: 12px;
-          font-size: 14px;
-        }
-
-        .user-tag {
-          margin-right: 8px;
-          margin-bottom: 8px;
         }
       }
     }

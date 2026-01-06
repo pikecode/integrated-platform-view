@@ -273,3 +273,13 @@ export const getDictionary = (code) => {
   });
 };
 
+/**
+ * 删除任务
+ */
+export const deleteTask = (taskId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/task/publish/v1/delete/${taskId}`,
+    method: 'post',
+    meta: { isToken: true }
+  });
+};
