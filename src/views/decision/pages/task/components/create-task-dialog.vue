@@ -46,7 +46,6 @@
                 v-model="formData.taskNo"
                 placeholder="请选择任务标签"
                 :loading="loadingTaskTag"
-                :disabled="!formData.taskSource"
               >
                 <el-option
                   v-for="item in taskTagOptions"
@@ -316,14 +315,7 @@ export default {
       if (val) {
         this.initForm();
         this.loadTaskSource();
-      }
-    },
-    'formData.taskSource'(newVal) {
-      if (newVal) {
-        this.loadTaskTag(newVal);
-      } else {
-        this.taskTagOptions = [];
-        this.formData.taskNo = '';
+        this.loadTaskTag();
       }
     }
   },
@@ -350,9 +342,8 @@ export default {
         });
     },
 
-    loadTaskTag(sourceValue) {
+    loadTaskTag() {
       this.loadingTaskTag = true;
-      this.formData.taskNo = '';
       this.taskTagOptions = [];
 
       taskApi.getDictionary('oatask-rwbq')
