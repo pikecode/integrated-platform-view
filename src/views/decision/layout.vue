@@ -94,17 +94,42 @@ export default {
   },
   watch: {
     '$route.path': function(newPath) {
+      // 详情页面不高亮导航菜单
+      if (newPath.includes('/detail/')) {
+        this.activeMenu = '';
+        return;
+      }
+
       // 根据路由更新菜单选中状态
       if (this.pageMap[newPath]) {
         this.activeMenu = newPath;
+      } else {
+        // 尝试匹配父级路径
+        const basePath = newPath.split('/').slice(0, 3).join('/');
+        if (this.pageMap[basePath]) {
+          this.activeMenu = basePath;
+        }
       }
     }
   },
   mounted() {
     // 初始化菜单选中状态
     const path = this.$route.path;
+
+    // 详情页面不高亮导航菜单
+    if (path.includes('/detail/')) {
+      this.activeMenu = '';
+      return;
+    }
+
     if (this.pageMap[path]) {
       this.activeMenu = path;
+    } else {
+      // 尝试匹配父级路径
+      const basePath = path.split('/').slice(0, 3).join('/');
+      if (this.pageMap[basePath]) {
+        this.activeMenu = basePath;
+      }
     }
   },
   methods: {

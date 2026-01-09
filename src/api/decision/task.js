@@ -210,6 +210,30 @@ export const getFeedbackDoneTaskPage = (data) => {
 };
 
 /**
+ * 获取待审批任务列表（我参与的）
+ */
+export const getApprovalTaskPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/page/approval',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 获取已审批任务列表（我参与的）
+ */
+export const getApprovalDoneTaskPage = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/page/approvaldone',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
  * 获取部门列表
  */
 export const getDepartmentList = (tenantId) => {
@@ -280,6 +304,18 @@ export const deleteTask = (taskId) => {
   return request({
     url: `/api/xinhui-oa-task/api/task/publish/v1/delete/${taskId}`,
     method: 'post',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 审批任务
+ */
+export const approveTask = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/approve',
+    method: 'post',
+    data,
     meta: { isToken: true }
   });
 };

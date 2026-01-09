@@ -39,7 +39,19 @@
 
         <!-- 基本信息 -->
         <div class="basic-info-section">
-         
+          <!-- 操作按钮区域 - 待反馈 -->
+          <div v-if="fromPage === 'participate_pending_feedback'" class="action-buttons-bar">
+            <el-button type="primary" @click="handleAccept">接收</el-button>
+            <el-button type="primary" @click="handleTransfer">转办</el-button>
+            <el-button type="danger" @click="handleReject">拒绝</el-button>
+            <el-button @click="handleReturn">返回</el-button>
+          </div>
+
+          <!-- 操作按钮区域 - 待审批 -->
+          <div v-if="fromPage === 'participate_pending_review'" class="action-buttons-bar">
+            <el-button type="primary" @click="handleApprove">审批</el-button>
+            <el-button @click="handleReturn">返回</el-button>
+          </div>
 
           <!-- 标题和右上角提示 -->
           <div class="header-content">
@@ -226,6 +238,20 @@
       <!-- 空状态 -->
       <div v-else class="empty-state">未能加载任务详情</div>
     </el-card>
+
+    <!-- 审批对话框 -->
+    <approval-dialog
+      v-model="showApprovalDialog"
+      :task-data="taskDetail || {}"
+      @submit="handleApprovalSubmit"
+    />
+
+    <!-- 接收对话框 -->
+    <accept-dialog
+      v-model="showAcceptDialog"
+      :task-data="taskDetail || {}"
+      @submit="handleAcceptSubmit"
+    />
   </div>
 </template>
 
@@ -233,17 +259,24 @@
 import { Loading } from '@element-plus/icons-vue';
 import * as taskApi from '@/api/decision/task';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
+import ApprovalDialog from './components/approval-dialog.vue';
+import AcceptDialog from './components/accept-dialog.vue';
 
 export default {
   name: 'TaskDetail',
   components: {
     Loading,
     DecisionBreadcrumb,
+    ApprovalDialog,
+    AcceptDialog,
   },
   data() {
     return {
       taskDetail: null,
       loading: false,
+      fromPage: '', // 来源页面标识
+      showApprovalDialog: false, // 控制审批对话框显示
+      showAcceptDialog: false, // 控制接收对话框显示
       taskStages: [
         { id: 1, name: '任务新增' },
         { id: 2, name: '任务接收' },
@@ -265,6 +298,10 @@ export default {
   methods: {
     loadTaskDetail(taskId) {
       this.loading = true;
+
+      // 获取来源页面标识
+      this.fromPage = this.$route.query.from || '';
+
       taskApi
         .getTaskDetail(taskId)
         .then(response => {
@@ -393,6 +430,103 @@ export default {
     handleGoBack() {
       this.$router.go(-1);
     },
+
+    // 接收任务
+    handleAccept() {
+      this.showAcceptDialog = true;
+    },
+
+    // 提交接收
+    handleAcceptSubmit(acceptData) {
+      console.log('接收数据：', acceptData);
+
+      // TODO: 调用接收任务API
+      this.$message.success('任务接收成功');
+
+      // 刷新任务详情或返回列表
+      this.loadTaskDetail(this.$route.params.id);
+    },
+
+    // 转办任务
+    handleTransfer() {
+      this.$message.info('转办功能开发中');
+      // TODO: 打开转办对话框
+    },
+
+    // 拒绝任务
+    handleReject() {
+      this.$confirm('确认拒绝此任务吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$message.success('任务已拒绝');
+        // TODO: 调用拒绝任务API
+        // 使用 handleReturn 统一处理返回逻辑
+        this.handleReturn();
+      }).catch(() => {});
+    },
+
+    // 返回
+    handleReturn() {
+      // 根据来源页面返回到对应列表
+      switch (this.fromPage) {
+        case 'participate_pending_feedback':
+          // 返回到"我参与的"待反馈tab
+          this.$router.push({
+            path: '/decision/task/participate',
+            query: { tab: 'pending_feedback' }
+          });
+          break;
+        case 'participate_pending_review':
+          // 返回到"我参与的"待审批tab
+          this.$router.push({
+            path: '/decision/task/participate',
+            query: { tab: 'pending_review' }
+          });
+          break;
+        case 'task_published':
+          // 返回到"我发布的"列表
+          this.$router.push('/decision/task');
+          break;
+        default:
+          // 默认返回上一页或"我发布的"列表
+          if (window.history.length > 1) {
+            this.$router.go(-1);
+          } else {
+            this.$router.push('/decision/task');
+          }
+      }
+    },
+
+    // 打开审批对话框
+    handleApprove() {
+      this.showApprovalDialog = true;
+    },
+
+    // 提交审批
+    handleApprovalSubmit(approvalData) {
+      console.log('审批数据：', approvalData);
+
+      // 调用审批接口
+      taskApi.approveTask(approvalData)
+        .then(response => {
+          console.log('审批接口响应：', response);
+          if (response.data && response.data.code === 200 && response.data.success) {
+            const statusText = approvalData.approvalStatus === '11' ? '同意' : '拒绝';
+            this.$message.success(`任务审批${statusText}成功`);
+            // 使用 handleReturn 统一处理返回逻辑
+            this.handleReturn();
+          } else {
+            const errorMsg = response.data?.msg || '审批失败';
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('审批接口请求异常：', error);
+          this.$message.error('审批失败，请检查网络连接');
+        });
+    },
   },
 };
 </script>
@@ -401,6 +535,18 @@ export default {
 .task-detail-page {
   @media (max-width: 768px) {
     padding: 12px;
+  }
+
+  // 操作按钮栏
+  .action-buttons-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    justify-content: flex-end;
+
+    .el-button {
+      min-width: 80px;
+    }
   }
 
   .box-card {

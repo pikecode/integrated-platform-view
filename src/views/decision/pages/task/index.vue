@@ -663,7 +663,10 @@ export default {
     },
 
     handleViewDetail(id) {
-      this.$router.push(`/decision/task/detail/${id}`);
+      this.$router.push({
+        path: `/decision/task/detail/${id}`,
+        query: { from: 'task_published' }
+      });
     },
 
     handleDelete(row) {
@@ -785,6 +788,53 @@ export default {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+::v-deep .basic-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.search-form-container {
+  flex-shrink: 0;
+}
+
+::v-deep .avue-crud {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin: 0;
+
+  .el-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin: 0;
+
+    .el-card__body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+      padding: 0;
+
+      .el-table {
+        flex: 1;
+      }
+
+      .el-table__wrapper {
+        flex: 1;
+        overflow: auto;
+      }
+    }
+  }
+
+  .el-table {
+    flex: 1;
   }
 }
 </style>
