@@ -177,59 +177,6 @@ export default {
           // 使用API返回的议题列表
           let topics = res.data.data.topicList || [];
 
-          // 如果议题列表为空，使用 mock 数据
-          if (topics.length === 0) {
-            topics = [
-              {
-                topicId: '1',
-                topicName: '关于2024年度工作计划的议题',
-                applyDeptId: 'dept001',
-                applyDeptName: '胸外科',
-                defaultSort: 1
-              },
-              {
-                topicId: '2',
-                topicName: '医院信息化建设进展汇报',
-                applyDeptId: 'dept002',
-                applyDeptName: '信息技术部',
-                defaultSort: 2
-              },
-              {
-                topicId: '3',
-                topicName: '临床路径优化方案讨论',
-                applyDeptId: 'dept003',
-                applyDeptName: '质管科',
-                defaultSort: 3
-              },
-              {
-                topicId: '4',
-                topicName: '医疗质量持续改进项目总结',
-                applyDeptId: 'dept001',
-                applyDeptName: '胸外科',
-                defaultSort: 4
-              },
-              {
-                topicId: '5',
-                topicName: '人才队伍建设与引进计划',
-                applyDeptId: 'dept004',
-                applyDeptName: '人力资源部',
-                defaultSort: 5
-              }
-            ];
-          }
-
-          // 如果参会人员列表为空，使用 mock 数据
-          if (this.attendeeList.length === 0) {
-            this.attendeeList = [
-              { id: '1', userId: '1', userName: '张明', deptId: 'dept001', deptName: '胸外科' },
-              { id: '2', userId: '2', userName: '李四', deptId: 'dept002', deptName: '心内科' },
-              { id: '3', userId: '3', userName: '王五', deptId: 'dept003', deptName: '放射科' },
-              { id: '4', userId: '4', userName: '赵六', deptId: 'dept004', deptName: '质管科' },
-              { id: '5', userId: '5', userName: '孙七', deptId: 'dept001', deptName: '胸外科' },
-              { id: '6', userId: '6', userName: '周八', deptId: 'dept005', deptName: '护理部' }
-            ];
-          }
-
           this.allTopics = topics;
           this.topicTotal = topics.length;
           this.topicPage.currentPage = 1;

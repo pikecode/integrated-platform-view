@@ -387,67 +387,6 @@ export default {
             sort: topic.defaultSort
           }));
 
-          // 如果议题列表为空，使用 mock 数据
-          if (topics.length === 0) {
-            topics = [
-              {
-                id: '1',
-                title: '征报生党支部资质资教学项',
-                department: '胸外科',
-                deptId: 'dept001',
-                director: '张三',
-                startTime: '2025-08-08 13:00',
-                endTime: '2025-08-08 13:30',
-                duration: 309,
-                sort: 1
-              },
-              {
-                id: '2',
-                title: '医院信息化建设进展汇报',
-                department: '信息技术部',
-                deptId: 'dept002',
-                director: '李四',
-                startTime: '2025-08-08 14:00',
-                endTime: '2025-08-08 14:45',
-                duration: 45,
-                sort: 2
-              },
-              {
-                id: '3',
-                title: '临床路径优化方案讨论',
-                department: '质管科',
-                deptId: 'dept003',
-                director: '王五',
-                startTime: '2025-08-08 15:00',
-                endTime: '2025-08-08 16:00',
-                duration: 60,
-                sort: 3
-              },
-              {
-                id: '4',
-                title: '医疗质量持续改进项目总结',
-                department: '胸外科',
-                deptId: 'dept001',
-                director: '赵六',
-                startTime: '2025-08-08 16:30',
-                endTime: '2025-08-08 17:30',
-                duration: 60,
-                sort: 4
-              },
-              {
-                id: '5',
-                title: '人才队伍建设与引进计划',
-                department: '人力资源部',
-                deptId: 'dept004',
-                director: '孙七',
-                startTime: '2025-08-08 17:45',
-                endTime: '2025-08-08 18:45',
-                duration: 60,
-                sort: 5
-              }
-            ];
-          }
-
           // 处理参会人员列表，如果为空使用 mock 数据
           let participants = (detail.attendeeList || []).map(attendee => ({
             id: attendee.userId,
@@ -455,18 +394,6 @@ export default {
             deptId: attendee.deptId,
             deptName: attendee.deptName
           }));
-
-          // 如果参会人员列表为空，使用 mock 数据
-          if (participants.length === 0) {
-            participants = [
-              { id: '1', name: '张明', deptId: 'dept001', deptName: '胸外科' },
-              { id: '2', name: '李四', deptId: 'dept002', deptName: '心内科' },
-              { id: '3', name: '王五', deptId: 'dept003', deptName: '放射科' },
-              { id: '4', name: '赵六', deptId: 'dept004', deptName: '质管科' },
-              { id: '5', name: '孙七', deptId: 'dept001', deptName: '胸外科' },
-              { id: '6', name: '周八', deptId: 'dept005', deptName: '护理部' }
-            ];
-          }
 
           // 设置选中的议程，包含详情数据
           this.selectedSchedule = {
