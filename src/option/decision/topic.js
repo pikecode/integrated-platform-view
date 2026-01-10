@@ -49,6 +49,75 @@ export const topicOption = (vm) => {
     column: [
       {
         label: '议题名称',
+        prop: 'title',
+        minWidth: 200,
+        overHidden: true,
+        slot: true
+      },
+      {
+        label: '议题状态',
+        prop: 'statusDesc',
+        width: 130,
+        slot: true
+      },
+      {
+        label: '当前审批节点',
+        prop: 'approvalTaskName',
+        width: 150,
+        overHidden: true
+      },
+      {
+        label: '会议类型',
+        prop: 'meetingTypeDesc',
+        width: 120,
+        overHidden: true
+      },
+      {
+        label: '申报科室',
+        prop: 'department',
+        width: 120,
+        overHidden: true
+      },
+      {
+        label: '科室分管领导',
+        prop: 'leader',
+        width: 120,
+        overHidden: true
+      },
+      {
+        label: '议题申请时间',
+        prop: 'createdAt',
+        width: 160
+      }
+    ]
+  };
+};
+
+/**
+ * 我发布的议题配置
+ */
+export const myTopicsOption = (vm) => {
+  return {
+    // 基础配置
+    height: 'auto',
+    calcHeight: 280,
+    tip: false,
+    searchShow: false,
+    border: true,
+    index: true,
+    selection: true,
+    viewBtn: false,
+    addBtn: false,
+    delBtn: false,
+    editBtn: false,
+    menu: true,
+    menuWidth: 280,
+    dialogClickModal: false,
+
+    // 列定义
+    column: [
+      {
+        label: '议题名称',
         prop: 'topicName',
         minWidth: 200,
         overHidden: true,
@@ -67,20 +136,8 @@ export const topicOption = (vm) => {
         overHidden: true
       },
       {
-        label: '当前执行人',
-        prop: 'approvalAssigneeName',
-        width: 120,
-        overHidden: true
-      },
-      {
         label: '申报科室',
         prop: 'applyDeptName',
-        width: 120,
-        overHidden: true
-      },
-      {
-        label: '科室主任',
-        prop: 'applyDeptDirectorName',
         width: 120,
         overHidden: true
       },
@@ -91,33 +148,10 @@ export const topicOption = (vm) => {
         overHidden: true
       },
       {
-        label: '汇报人',
-        prop: 'reporterName',
-        width: 100
-      },
-      {
-        label: '汇报时长',
-        prop: 'reportDuration',
-        width: 100,
-        formatter: (row) => row.reportDuration ? `${row.reportDuration}分钟` : '-'
-      },
-      {
-        label: '期望汇报时间',
-        prop: 'expectReportDate',
-        width: 120
-      },
-      {
-        label: '议题创建时间',
+        label: '议题申请时间',
         prop: 'createTime',
         width: 160
       }
     ]
   };
-};
-
-/**
- * 我发布的议题配置
- */
-export const myTopicsOption = (vm) => {
-  return topicOption(vm);
 };

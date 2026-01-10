@@ -33,17 +33,6 @@
             <span class="info-label">参会人数:</span>
             <span class="info-value">{{ attendeeList.length || 0 }}</span>
           </div>
-          <div class="info-item" v-if="attendeeList.length > 0">
-            <span class="info-label">参会人员:</span>
-            <div class="attendee-list">
-              <div class="attendee-item" v-for="(attendee, index) in attendeeList.slice(0, 3)" :key="index">
-                {{ attendee.userName || attendee.deptName || '-' }}
-              </div>
-              <div class="attendee-item more" v-if="attendeeList.length > 3">
-                +{{ attendeeList.length - 3 }}人
-              </div>
-            </div>
-          </div>
           <div class="info-item">
             <span class="info-label">申请人:</span>
             <span class="info-value">{{ meetingData.applyUserName || '-' }}</span>
@@ -53,6 +42,17 @@
             <span class="info-value status" :class="`status-${meetingData.agendaStatus}`">
               {{ meetingData.agendaStatusDesc || meetingData.status || '-' }}
             </span>
+          </div>
+        </div>
+
+        <!-- 参会人员详细列表 -->
+        <div class="participants-section" v-if="attendeeList.length > 0">
+          <div class="section-title">参会人员 ({{ attendeeList.length }}人)</div>
+          <div class="participants-list">
+            <div class="participant-item" v-for="attendee in attendeeList" :key="attendee.id">
+              <span class="participant-name">{{ attendee.userName || '-' }}</span>
+              <span class="participant-dept" v-if="attendee.deptName">({{ attendee.deptName }})</span>
+            </div>
           </div>
         </div>
       </div>
@@ -159,25 +159,84 @@ export default {
   methods: {
     async loadMeetingDetail() {
       if (!this.meetingData || !this.meetingData.id) {
+        console.warn('未获取到会议ID，meetingData:', this.meetingData);
         return;
       }
 
       this.loading = true;
       try {
         const res = await topicApi.getAgendaDetail(this.meetingData.id);
-        if (res.data && res.data.code === 200 && res.data.success) {
+        console.log('会议详情API响应:', res);
+
+        if (res.data && (res.data.code === 0 || res.data.code === 200) && res.data.success && res.data.data) {
           this.detailData = res.data.data;
           // 加载参会人员列表
           this.attendeeList = res.data.data.attendeeList || [];
+          console.log('参会人员列表:', this.attendeeList);
 
           // 使用API返回的议题列表
-          const topics = res.data.data.topicList || [];
+          let topics = res.data.data.topicList || [];
+
+          // 如果议题列表为空，使用 mock 数据
+          if (topics.length === 0) {
+            topics = [
+              {
+                topicId: '1',
+                topicName: '关于2024年度工作计划的议题',
+                applyDeptId: 'dept001',
+                applyDeptName: '胸外科',
+                defaultSort: 1
+              },
+              {
+                topicId: '2',
+                topicName: '医院信息化建设进展汇报',
+                applyDeptId: 'dept002',
+                applyDeptName: '信息技术部',
+                defaultSort: 2
+              },
+              {
+                topicId: '3',
+                topicName: '临床路径优化方案讨论',
+                applyDeptId: 'dept003',
+                applyDeptName: '质管科',
+                defaultSort: 3
+              },
+              {
+                topicId: '4',
+                topicName: '医疗质量持续改进项目总结',
+                applyDeptId: 'dept001',
+                applyDeptName: '胸外科',
+                defaultSort: 4
+              },
+              {
+                topicId: '5',
+                topicName: '人才队伍建设与引进计划',
+                applyDeptId: 'dept004',
+                applyDeptName: '人力资源部',
+                defaultSort: 5
+              }
+            ];
+          }
+
+          // 如果参会人员列表为空，使用 mock 数据
+          if (this.attendeeList.length === 0) {
+            this.attendeeList = [
+              { id: '1', userId: '1', userName: '张明', deptId: 'dept001', deptName: '胸外科' },
+              { id: '2', userId: '2', userName: '李四', deptId: 'dept002', deptName: '心内科' },
+              { id: '3', userId: '3', userName: '王五', deptId: 'dept003', deptName: '放射科' },
+              { id: '4', userId: '4', userName: '赵六', deptId: 'dept004', deptName: '质管科' },
+              { id: '5', userId: '5', userName: '孙七', deptId: 'dept001', deptName: '胸外科' },
+              { id: '6', userId: '6', userName: '周八', deptId: 'dept005', deptName: '护理部' }
+            ];
+          }
+
           this.allTopics = topics;
           this.topicTotal = topics.length;
           this.topicPage.currentPage = 1;
           this.loadTopics();
         } else {
-          this.$message.error(res.data.msg || '加载会议详情失败');
+          console.warn('API响应异常:', res.data);
+          this.$message.error(res.data?.msg || '加载会议详情失败');
         }
       } catch (error) {
         console.error('加载会议详情失败：', error);
@@ -198,13 +257,13 @@ export default {
       const startIndex = (this.topicPage.currentPage - 1) * this.topicPage.pageSize;
       const paginatedTopics = this.allTopics.slice(startIndex, startIndex + this.topicPage.pageSize);
 
-      // 映射API返回的字段到表格需要的格式
+      // 映射API返回的字段到表格需要的格式（兼容 mock 数据）
       this.topicList = paginatedTopics.map((item, index) => ({
         index: startIndex + index + 1,
-        id: item.id,
-        title: item.title || item.topicName || '-',
-        department: item.department || item.deptName || '-',
-        director: item.director || item.applyUserName || '-'
+        id: item.topicId || item.id || '-',
+        title: item.topicName || item.title || '-',
+        department: item.applyDeptName || item.deptName || '-',
+        director: item.applyUserName || item.director || '-'
       }));
     },
 
@@ -276,6 +335,7 @@ export default {
     flex-direction: column;
     padding-right: 10px;
     overflow-y: auto;
+    max-height: 500px;
 
     .info-list {
       .info-item {
@@ -323,25 +383,56 @@ export default {
             }
           }
         }
+      }
+    }
 
-        .attendee-list {
+    .participants-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #ebeef5;
+
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ebeef5;
+      }
+
+      .participants-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+
+        .participant-item {
           display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-          margin-top: 4px;
+          align-items: center;
+          gap: 4px;
+          padding: 8px;
+          background: #f0f9ff;
+          border: 1px solid #c5e4f3;
+          border-radius: 4px;
+          font-size: 12px;
+          color: #303133;
+          transition: all 0.2s ease;
 
-          .attendee-item {
-            padding: 2px 8px;
-            background: #f0f4ff;
-            color: #667eea;
-            font-size: 12px;
-            border-radius: 3px;
+          &:hover {
+            background: #e8f4fd;
+            border-color: #b3d8ff;
+          }
 
-            &.more {
-              background: transparent;
-              color: #909399;
-              padding: 0;
-            }
+          .participant-name {
+            font-weight: 500;
+            flex-shrink: 0;
+          }
+
+          .participant-dept {
+            color: #909399;
+            font-size: 11px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
         }
       }

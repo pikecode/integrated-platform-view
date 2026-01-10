@@ -319,3 +319,49 @@ export const approveTask = (data) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 反馈任务
+ */
+export const feedbackTask = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/feedback',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 接收任务
+ */
+export const receiveTask = (taskId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/task/participate/v1/receive/${taskId}`,
+    method: 'post',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 拒绝任务
+ */
+export const rejectTask = (taskId) => {
+  return request({
+    url: `/api/xinhui-oa-task/api/task/participate/v1/reject/${taskId}`,
+    method: 'post',
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 转办任务
+ */
+export const transferTask = (data) => {
+  return request({
+    url: '/api/xinhui-oa-task/api/task/participate/v1/transfer',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};

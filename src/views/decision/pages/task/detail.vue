@@ -44,6 +44,7 @@
             <el-button type="primary" @click="handleAccept">接收</el-button>
             <el-button type="primary" @click="handleTransfer">转办</el-button>
             <el-button type="danger" @click="handleReject">拒绝</el-button>
+            <el-button type="primary" @click="handleFeedback">反馈</el-button>
             <el-button @click="handleReturn">返回</el-button>
           </div>
 
@@ -246,11 +247,18 @@
       @submit="handleApprovalSubmit"
     />
 
-    <!-- 接收对话框 -->
-    <accept-dialog
-      v-model="showAcceptDialog"
+    <!-- 反馈对话框 -->
+    <feedback-dialog
+      v-model="showFeedbackDialog"
       :task-data="taskDetail || {}"
-      @submit="handleAcceptSubmit"
+      @submit="handleFeedbackSubmit"
+    />
+
+    <!-- 转办对话框 -->
+    <transfer-dialog
+      v-model="showTransferDialog"
+      :task-data="taskDetail || {}"
+      @submit="handleTransferSubmit"
     />
   </div>
 </template>
@@ -260,7 +268,8 @@ import { Loading } from '@element-plus/icons-vue';
 import * as taskApi from '@/api/decision/task';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import ApprovalDialog from './components/approval-dialog.vue';
-import AcceptDialog from './components/accept-dialog.vue';
+import FeedbackDialog from './components/feedback-dialog.vue';
+import TransferDialog from './components/transfer-dialog.vue';
 
 export default {
   name: 'TaskDetail',
@@ -268,7 +277,8 @@ export default {
     Loading,
     DecisionBreadcrumb,
     ApprovalDialog,
-    AcceptDialog,
+    FeedbackDialog,
+    TransferDialog,
   },
   data() {
     return {
@@ -276,7 +286,8 @@ export default {
       loading: false,
       fromPage: '', // 来源页面标识
       showApprovalDialog: false, // 控制审批对话框显示
-      showAcceptDialog: false, // 控制接收对话框显示
+      showFeedbackDialog: false, // 控制反馈对话框显示
+      showTransferDialog: false, // 控制转办对话框显示
       taskStages: [
         { id: 1, name: '任务新增' },
         { id: 2, name: '任务接收' },
@@ -433,24 +444,80 @@ export default {
 
     // 接收任务
     handleAccept() {
-      this.showAcceptDialog = true;
+      this.$confirm('确认接收此任务吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        // 调用接收任务API
+        taskApi.receiveTask(this.$route.params.id)
+          .then(response => {
+            console.log('【接收任务】API响应:', response);
+            if (response.data && response.data.code === 200 && response.data.success) {
+              this.$message.success('任务接收成功');
+              // 刷新任务详情
+              this.loadTaskDetail(this.$route.params.id);
+            } else {
+              const errorMsg = response.data?.msg || '任务接收失败';
+              this.$message.error(errorMsg);
+            }
+          })
+          .catch(error => {
+            console.error('【接收任务】请求异常:', error);
+            this.$message.error('任务接收失败，请检查网络连接');
+          });
+      }).catch(() => {});
     },
 
-    // 提交接收
-    handleAcceptSubmit(acceptData) {
-      console.log('接收数据：', acceptData);
+    // 提交反馈
+    handleFeedbackSubmit(feedbackData) {
+      console.log('反馈数据：', feedbackData);
 
-      // TODO: 调用接收任务API
-      this.$message.success('任务接收成功');
-
-      // 刷新任务详情或返回列表
-      this.loadTaskDetail(this.$route.params.id);
+      // 调用反馈任务API
+      taskApi.feedbackTask(feedbackData)
+        .then(response => {
+          console.log('【任务反馈】API响应:', response);
+          if (response.data && response.data.code === 200 && response.data.success) {
+            this.$message.success('任务反馈提交成功');
+            // 返回列表
+            this.handleReturn();
+          } else {
+            const errorMsg = response.data?.msg || '反馈提交失败';
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【任务反馈】请求异常:', error);
+          this.$message.error('反馈提交失败，请检查网络连接');
+        });
     },
 
-    // 转办任务
+    // 打开转办对话框
     handleTransfer() {
-      this.$message.info('转办功能开发中');
-      // TODO: 打开转办对话框
+      this.showTransferDialog = true;
+    },
+
+    // 提交转办
+    handleTransferSubmit(transferData) {
+      console.log('转办数据：', transferData);
+
+      // 调用转办任务API
+      taskApi.transferTask(transferData)
+        .then(response => {
+          console.log('【转办任务】API响应:', response);
+          if (response.data && response.data.code === 200 && response.data.success) {
+            this.$message.success('任务转办成功');
+            // 返回列表
+            this.handleReturn();
+          } else {
+            const errorMsg = response.data?.msg || '任务转办失败';
+            this.$message.error(errorMsg);
+          }
+        })
+        .catch(error => {
+          console.error('【转办任务】请求异常:', error);
+          this.$message.error('任务转办失败，请检查网络连接');
+        });
     },
 
     // 拒绝任务
@@ -460,10 +527,23 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$message.success('任务已拒绝');
-        // TODO: 调用拒绝任务API
-        // 使用 handleReturn 统一处理返回逻辑
-        this.handleReturn();
+        // 调用拒绝任务API
+        taskApi.rejectTask(this.$route.params.id)
+          .then(response => {
+            console.log('【拒绝任务】API响应:', response);
+            if (response.data && response.data.code === 200 && response.data.success) {
+              this.$message.success('任务已拒绝');
+              // 使用 handleReturn 统一处理返回逻辑
+              this.handleReturn();
+            } else {
+              const errorMsg = response.data?.msg || '任务拒绝失败';
+              this.$message.error(errorMsg);
+            }
+          })
+          .catch(error => {
+            console.error('【拒绝任务】请求异常:', error);
+            this.$message.error('任务拒绝失败，请检查网络连接');
+          });
       }).catch(() => {});
     },
 
@@ -497,6 +577,11 @@ export default {
             this.$router.push('/decision/task');
           }
       }
+    },
+
+    // 打开反馈对话框
+    handleFeedback() {
+      this.showFeedbackDialog = true;
     },
 
     // 打开审批对话框

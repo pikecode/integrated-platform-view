@@ -44,7 +44,13 @@ export default {
       // 科室信息缓存（ID -> 科室对象）
       deptInfoCache: {},
       // 标志位：是否正在从API加载详情数据
-      isLoadingDetail: false
+      isLoadingDetail: false,
+      // 部门选项
+      departmentOptions: [],
+      loadingDepartments: false,
+      // 人员选项
+      personOptions: [],
+      loadingPersons: false
     };
   },
   computed: {
@@ -72,32 +78,34 @@ export default {
   watch: {
     'formData.department'(val) {
       if (val) {
-        // 加载该科室的主任列表
-        // 如果正在加载详情，使用不清空值的版本
-        if (this.isLoadingDetail) {
-          this.loadDeptDirectorsNoClearing(val);
-        } else {
-          this.loadDeptDirectors(val);
-        }
+        // 加载该科室的人员列表
+        this.loadPersonsByDept(val);
+      } else {
+        // 清空人员列表
+        this.personOptions = [];
+        this.updatePersonFields([]);
       }
     },
 
     'formData.needCollaboration'(val) {
       // Show/hide collaboration related fields
-      this.setGroupFieldsDisplay('group4', ['collaborationDepts', 'collaborationLeaders', 'collaborationDirectors'], val === '是');
+      this.setGroupFieldsDisplay('group2', ['collaborationDepts', 'collaborationLeaders', 'collaborationDirectors'], val === '是');
     },
 
     'formData.hasRisk'(val) {
       // Show/hide public opinion measures and risk measures fields
-      this.setGroupFieldDisplay('group4', 'publicOpinionMeasures', val === '是');
-      this.setGroupFieldDisplay('group4', 'riskMeasures', val === '是');
+      this.setGroupFieldDisplay('group2', 'publicOpinionMeasures', val === '是');
+      this.setGroupFieldDisplay('group2', 'riskMeasures', val === '是');
     },
 
     'formData.collaborationDepts'(val) {
       if (val && val.length > 0) {
-        this.fillCollaborationInfo(val);
+        // 加载协同科室的人员列表
+        this.loadPersonsByDept(val[0]);
       } else {
+        // 清空协同科室的人员选择
         this.formData.collaborationLeaders = '';
+        this.formData.collaborationDirectors = [];
       }
     }
   },
@@ -132,9 +140,9 @@ export default {
             }
 
             // 同时更新协同科室字段
-            const group4 = this.formOption.group.find(g => g.prop === 'group4');
-            if (group4) {
-              const collaborationField = group4.column.find(c => c.prop === 'collaborationDepts');
+            const group2 = this.formOption.group.find(g => g.prop === 'group2');
+            if (group2) {
+              const collaborationField = group2.column.find(c => c.prop === 'collaborationDepts');
               if (collaborationField) {
                 collaborationField.dicData = deptData;
               }
@@ -145,6 +153,117 @@ export default {
           console.error('获取科室列表失败:', err);
           // 失败时保持原有的静态数据
         });
+    },
+
+    loadPersonsByDept(deptId) {
+      this.loadingPersons = true;
+
+      // 从接口获取科室人员列表
+      getDeptUsers(deptId)
+        .then(res => {
+          console.log('【科室人员】API响应:', res);
+          if (res.data && res.data.code === 200) {
+            const data = res.data.data;
+            // 获取用户列表
+            const userList = data.userList || [];
+
+            // 转换为表单选项格式
+            const personData = userList.map(user => ({
+              label: user.realName || user.name,
+              value: user.id
+            }));
+
+            this.personOptions = personData;
+            console.log('【科室人员】选项数据:', this.personOptions);
+
+            // 更新所有人员选择字段的 dicData
+            this.updatePersonFields(personData);
+          } else {
+            const errorMsg = res.data?.msg || '加载科室人员失败';
+            console.error('【科室人员】错误:', errorMsg);
+            this.$message.error(errorMsg);
+            this.personOptions = [];
+            this.updatePersonFields([]);
+          }
+        })
+        .catch(error => {
+          console.error('【科室人员】请求异常:', error);
+          this.$message.error('加载科室人员失败，请检查网络连接');
+          this.personOptions = [];
+          this.updatePersonFields([]);
+        })
+        .finally(() => {
+          this.loadingPersons = false;
+        });
+    },
+
+    // 更新所有人员选择字段（科室主任、汇报人、科室分管领导、协同科室主任、协同科室分管领导）
+    updatePersonFields(personData) {
+      const deptGroup = this.formOption.group.find(g => g.prop === 'group1');
+      if (deptGroup) {
+        // 更新科室主任字段
+        const directorField = deptGroup.column.find(c => c.prop === 'deptDirector');
+        if (directorField) {
+          directorField.dicData = personData;
+        }
+
+        // 更新汇报人字段
+        const reporterField = deptGroup.column.find(c => c.prop === 'reporter');
+        if (reporterField) {
+          reporterField.dicData = personData;
+        }
+
+        // 更新科室分管领导字段
+        const leaderField = deptGroup.column.find(c => c.prop === 'leader');
+        if (leaderField) {
+          leaderField.dicData = personData;
+        }
+      }
+
+      // 更新协同科室的人员字段
+      const group2 = this.formOption.group.find(g => g.prop === 'group2');
+      if (group2) {
+        // 更新协同科室主任字段
+        const collaborationLeaderField = group2.column.find(c => c.prop === 'collaborationLeaders');
+        if (collaborationLeaderField) {
+          collaborationLeaderField.dicData = personData;
+        }
+
+        // 更新协同科室分管领导字段
+        const collaborationDirectorField = group2.column.find(c => c.prop === 'collaborationDirectors');
+        if (collaborationDirectorField) {
+          collaborationDirectorField.dicData = personData;
+        }
+      }
+    },
+
+    // 返回 Promise 的人员加载方法（用于编辑时加载选项）
+    loadPersonsByDeptPromise(deptId) {
+      return new Promise((resolve, reject) => {
+        getDeptUsers(deptId)
+          .then(res => {
+            if (res.data && res.data.code === 200) {
+              const data = res.data.data;
+              const userList = data.userList || [];
+
+              // 转换为表单选项格式
+              const personData = userList.map(user => ({
+                label: user.realName || user.name,
+                value: user.id
+              }));
+
+              // 不清空已有值，直接更新 dicData（编辑模式）
+              this.updatePersonFields(personData);
+              resolve();
+            } else {
+              reject(new Error(res.data?.msg || '加载人员列表失败'));
+            }
+          })
+          .catch(err => {
+            console.error('加载人员列表失败:', err);
+            reject(err);
+          });
+      });
     },
 
     loadMeetingTypes() {
@@ -159,9 +278,9 @@ export default {
             }));
 
             // 更新表单配置中的会议类型字段
-            const group5 = this.formOption.group.find(g => g.prop === 'group5');
-            if (group5) {
-              const meetingTypeField = group5.column.find(c => c.prop === 'meetingType');
+            const group2 = this.formOption.group.find(g => g.prop === 'group2');
+            if (group2) {
+              const meetingTypeField = group2.column.find(c => c.prop === 'meetingType');
               if (meetingTypeField) {
                 meetingTypeField.dicData = meetingTypeData;
               }
@@ -210,17 +329,17 @@ export default {
             // 先加载科室选项和协同科室选项（如果有的话）
             const loadPromises = [];
 
-            // 如果有主申报科室，先加载其主任列表
+            // 如果有主申报科室，先加载其人员列表
             if (detail.applyDeptId) {
               loadPromises.push(
-                this.loadDeptDirectorsPromise(detail.applyDeptId)
+                this.loadPersonsByDeptPromise(detail.applyDeptId)
               );
             }
 
-            // 如果有协同科室，先加载其信息
+            // 如果有协同科室，先加载其人员信息
             if (detail.cooperateDeptId) {
               loadPromises.push(
-                this.loadCollaborationDeptInfoPromise(detail.cooperateDeptId)
+                this.loadPersonsByDeptPromise(detail.cooperateDeptId)
               );
             }
 
@@ -255,10 +374,10 @@ export default {
               // 更新字段显示状态
               this.$nextTick(() => {
                 if (this.formData.needCollaboration === '是') {
-                  this.setGroupFieldsDisplay('group4', ['collaborationDepts', 'collaborationLeaders', 'collaborationDirectors'], true);
+                  this.setGroupFieldsDisplay('group2', ['collaborationDepts', 'collaborationLeaders', 'collaborationDirectors'], true);
                 }
                 if (this.formData.hasRisk === '是') {
-                  this.setGroupFieldDisplay('group4', 'riskMeasures', true);
+                  this.setGroupFieldDisplay('group2', 'riskMeasures', true);
                 }
 
                 // 详情加载完成，取消标志位
@@ -551,9 +670,9 @@ export default {
 
       // 如果缓存中没有，从 dicData 中查找
       if (!collaborationDirectorInfo.name && formData.collaborationLeaders) {
-        const group4 = this.formOption.group.find(g => g.prop === 'group4');
-        if (group4) {
-          const directorField = group4.column.find(c => c.prop === 'collaborationLeaders');
+        const group2 = this.formOption.group.find(g => g.prop === 'group2');
+        if (group2) {
+          const directorField = group2.column.find(c => c.prop === 'collaborationLeaders');
           if (directorField && directorField.dicData) {
             const found = directorField.dicData.find(d => d.value === formData.collaborationLeaders);
             if (found) {
@@ -570,9 +689,9 @@ export default {
 
         // 如果缓存中没有，从 dicData 中查找
         if (!collaborationLeaderInfo.name) {
-          const group4 = this.formOption.group.find(g => g.prop === 'group4');
-          if (group4) {
-            const leaderField = group4.column.find(c => c.prop === 'collaborationDirectors');
+          const group2 = this.formOption.group.find(g => g.prop === 'group2');
+          if (group2) {
+            const leaderField = group2.column.find(c => c.prop === 'collaborationDirectors');
             if (leaderField && leaderField.dicData) {
               const found = leaderField.dicData.find(d => d.value === formData.collaborationDirectors[0]);
               if (found) {
@@ -612,7 +731,6 @@ export default {
         // 特殊信息
         isThreeMajor: isThreeMajor,
         isPublicOpinion: isPublicOpinion,
-        publicOpinionMeasure: formData.publicOpinionMeasures || '',
         riskMeasure: formData.riskMeasures || '',
 
         // 会议信息

@@ -56,17 +56,14 @@
                 v-model="searchParams.department"
                 placeholder="请选择申报科室"
                 clearable
+                :loading="loadingDepartments"
               >
-                <el-option label="胸外科" value="胸外科" />
-                <el-option label="心内科" value="心内科" />
-                <el-option label="放射科" value="放射科" />
-                <el-option label="重症监护室" value="重症监护室" />
-                <el-option label="门诊" value="门诊" />
-                <el-option label="护理部" value="护理部" />
-                <el-option label="感控部" value="感控部" />
-                <el-option label="医保科" value="医保科" />
-                <el-option label="急诊科" value="急诊科" />
-                <el-option label="质管科" value="质管科" />
+                <el-option
+                  v-for="item in deptList"
+                  :key="item.id"
+                  :label="item.deptName"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -159,6 +156,13 @@
         </el-button>
       </template>
     </avue-crud>
+
+    <!-- 审批对话框 -->
+    <approval-dialog
+      v-model="showApprovalDialog"
+      :current-topic="currentApprovalTopic"
+      @submit="handleApprovalSubmit"
+    />
   </div>
 </template>
 
@@ -166,6 +170,7 @@
 import { mapGetters } from 'vuex';
 import DecisionBreadcrumb from '../../components/breadcrumb.vue';
 import StatusBadge from '../../components/status-badge/index.vue';
+import ApprovalDialog from './components/approval-dialog.vue';
 import { topicOption } from '@/option/decision/topic';
 import * as topicApi from '@/api/decision/topic';
 
@@ -173,7 +178,8 @@ export default {
   name: 'TopicManagement',
   components: {
     DecisionBreadcrumb,
-    StatusBadge
+    StatusBadge,
+    ApprovalDialog
   },
   data() {
     return {
@@ -200,6 +206,15 @@ export default {
         total: 0
       },
       selectedTopics: [],
+      // 科室和人员数据
+      deptList: [],
+      deptDirectorList: [],
+      deptLeaderList: [],
+      loadingDepartments: false,
+      loadingPersons: false,
+      // 审批相关
+      showApprovalDialog: false,
+      currentApprovalTopic: {},
       mockTopics: [
         {
           id: '1',
@@ -355,10 +370,87 @@ export default {
       return opt;
     }
   },
+  watch: {
+    // 监听申报科室变化
+    'searchParams.department'(newVal) {
+      if (newVal) {
+        this.fetchDeptUsers(newVal);
+      } else {
+        this.deptDirectorList = [];
+        this.deptLeaderList = [];
+      }
+    }
+  },
   mounted() {
+    this.fetchDeptList();
     this.onLoad(this.page);
   },
   methods: {
+    // 获取科室列表
+    async fetchDeptList() {
+      this.loadingDepartments = true;
+      try {
+        // 从 userInfo 获取 tenantId，如果没有则使用默认值
+        const tenantId = this.userInfo?.tenantId || '000000';
+        const res = await topicApi.getDeptList(tenantId);
+        if (res.data && res.data.code === 200) {
+          this.deptList = res.data.data || [];
+          console.log('【科室列表】加载成功:', this.deptList);
+        } else {
+          const errorMsg = res.data?.msg || '加载科室列表失败';
+          console.error('【科室列表】错误:', errorMsg);
+          this.$message.error(errorMsg);
+        }
+      } catch (error) {
+        console.error('【科室列表】请求异常：', error);
+        this.$message.error('加载科室列表失败，请检查网络连接');
+      } finally {
+        this.loadingDepartments = false;
+      }
+    },
+
+    // 获取科室人员（科主任和分管领导）
+    async fetchDeptUsers(deptId) {
+      this.loadingPersons = true;
+      try {
+        const res = await topicApi.getDeptUsers(deptId);
+        if (res.data && res.data.code === 200) {
+          const data = res.data.data;
+          // 获取用户列表
+          const userList = data.userList || [];
+
+          // 转换为下拉列表选项格式
+          this.deptDirectorList = userList.map(user => ({
+            id: user.id,
+            realName: user.realName || user.name,
+            name: user.name
+          }));
+
+          // 分管领导列表（如果有的话）
+          this.deptLeaderList = userList.map(user => ({
+            id: user.id,
+            realName: user.realName || user.name,
+            name: user.name
+          }));
+
+          console.log('【科室人员】加载成功:', { deptDirectorList: this.deptDirectorList, deptLeaderList: this.deptLeaderList });
+        } else {
+          const errorMsg = res.data?.msg || '加载科室人员失败';
+          console.error('【科室人员】错误:', errorMsg);
+          this.$message.error(errorMsg);
+          this.deptDirectorList = [];
+          this.deptLeaderList = [];
+        }
+      } catch (error) {
+        console.error('【科室人员】请求异常：', error);
+        this.$message.error('加载科室人员失败，请检查网络连接');
+        this.deptDirectorList = [];
+        this.deptLeaderList = [];
+      } finally {
+        this.loadingPersons = false;
+      }
+    },
+
     async onLoad(page, params = {}) {
       this.loading = true;
       try {
@@ -417,6 +509,7 @@ export default {
             approvalNode: item.currentStageDesc,
             approvalTaskName: item.approvalTaskName,
             approvalAssigneeName: item.approvalAssigneeName,
+            approvalSyncId: item.approvalSyncId,
             approvalTime: item.approvalTime,
             department: item.applyDeptName,
             deptId: item.applyDeptId,
@@ -461,7 +554,13 @@ export default {
     },
 
     handleApprove(row) {
-      this.$message.success('审批成功');
+      // 打开审批弹窗，将当前行作为审批对象
+      this.currentApprovalTopic = row;
+      this.showApprovalDialog = true;
+    },
+
+    handleApprovalSubmit(approvalData) {
+      // 审批提交成功后刷新列表
       this.onLoad(this.page, this.searchParams);
     },
 

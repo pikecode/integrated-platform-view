@@ -794,12 +794,13 @@ export default {
 ::v-deep .basic-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 100px);
   overflow: hidden;
 }
 
 .search-form-container {
   flex-shrink: 0;
+  margin-bottom: 16px;
 }
 
 ::v-deep .avue-crud {
@@ -814,6 +815,7 @@ export default {
     flex-direction: column;
     flex: 1;
     margin: 0;
+    border-radius: 4px;
 
     .el-card__body {
       display: flex;
@@ -835,6 +837,11 @@ export default {
 
   .el-table {
     flex: 1;
+  }
+
+  .el-pagination {
+    flex-shrink: 0;
+    padding: 12px 0;
   }
 }
 </style>

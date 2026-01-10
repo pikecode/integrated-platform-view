@@ -271,6 +271,7 @@ export default {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
 
     .decision-header {
       height: 60px;
@@ -281,6 +282,7 @@ export default {
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+      flex-shrink: 0;
 
       .header-left {
         display: flex;
@@ -313,7 +315,8 @@ export default {
     .decision-content {
       flex: 1;
       overflow: auto;
-      padding: 24px;
+      padding: 16px;
+      min-height: 0;
 
       // 美化滚动条
       &::-webkit-scrollbar {

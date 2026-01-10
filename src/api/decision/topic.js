@@ -487,3 +487,27 @@ export const uploadAttachment = (file) => {
     meta: { isToken: true }
   });
 };
+
+/**
+ * 审批议题
+ */
+export const approveTopicApproval = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/topic/approval/v1/approve',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};
+
+/**
+ * 排序议题
+ */
+export const sortAgendaTopics = (data) => {
+  return request({
+    url: '/api/xinhui-oa-decision/api/agenda/v1/topic/sort',
+    method: 'post',
+    data,
+    meta: { isToken: true }
+  });
+};

@@ -552,18 +552,18 @@ export default {
 
         if (res.data && res.data.code === 200) {
           const records = res.data.data.records || [];
-          this.data = records.length > 0 ? records : this.getMockData();
-          this.page.total = res.data.data.total || this.getMockData().length;
+          this.data = records;
+          this.page.total = res.data.data.total || 0;
         } else {
-          // API 返回失败或为空，使用 mock 数据
-          this.data = this.getMockData();
-          this.page.total = this.getMockData().length;
+          // API 返回失败或为空
+          this.data = [];
+          this.page.total = 0;
         }
       } catch (error) {
         console.error('加载任务失败：', error);
-        // 出现异常也使用 mock 数据
-        this.data = this.getMockData();
-        this.page.total = this.getMockData().length;
+        // 出现异常时
+        this.data = [];
+        this.page.total = 0;
       } finally {
         this.loading = false;
       }
@@ -637,139 +637,6 @@ export default {
         this.$router.push(`/decision/task/detail/${id}`);
       }
     },
-
-    // 获取 Mock 数据
-    getMockData() {
-      const mockTaskId = 'fc6cc73f1f37435d8785a5d00ebe32da';
-      const mockTasks = [
-        {
-          id: mockTaskId,
-          taskName: '完成年度工作总结报告',
-          publishUserName: '张主任',
-          taskSourceName: '系统生成',
-          taskTagName: '重要',
-          taskContent: '请各部门完成2024年度工作总结报告，包括工作完成情况、存在问题及改进措施等内容。',
-          expectFinishTime: '2025-01-15T18:00:00.000Z',
-          deadlineTime: '2025-01-15T18:00:00.000Z',
-          taskStatus: '700',
-          taskStatusName: '进行中',
-          currentStage: '2',
-          currentStageName: '任务接收',
-          myParticipateRole: '1',
-          myParticipateRoleName: '执行人',
-          createTime: '2025-01-08T09:00:00.000Z',
-          updateTime: '2025-01-09T10:30:00.000Z',
-          approvalSyncId: null,
-          approvalTaskName: null,
-          approvalAssigneeName: null,
-          approvalTime: null,
-          canRecall: false,
-          canDel: false,
-          taskFinishCountdown: '6天'
-        },
-        {
-          id: mockTaskId,
-          taskName: '组织科室新年座谈会',
-          publishUserName: '李科长',
-          taskSourceName: '手动创建',
-          taskTagName: '一般',
-          taskContent: '组织科室全体人员召开新年座谈会，讨论2025年工作计划和目标。',
-          expectFinishTime: '2025-01-12T14:00:00.000Z',
-          deadlineTime: '2025-01-12T14:00:00.000Z',
-          taskStatus: '700',
-          taskStatusName: '进行中',
-          currentStage: '3',
-          currentStageName: '任务反馈',
-          myParticipateRole: '2',
-          myParticipateRoleName: '配合人',
-          createTime: '2025-01-05T10:00:00.000Z',
-          updateTime: '2025-01-09T11:00:00.000Z',
-          approvalSyncId: null,
-          approvalTaskName: null,
-          approvalAssigneeName: null,
-          approvalTime: null,
-          canRecall: false,
-          canDel: false,
-          taskFinishCountdown: '3天'
-        },
-        {
-          id: mockTaskId,
-          taskName: '制定部门培训计划',
-          publishUserName: '王经理',
-          taskSourceName: '系统生成',
-          taskTagName: '紧急',
-          taskContent: '根据公司年度培训要求，制定本部门2025年度培训计划，包括培训内容、时间安排、预算等。',
-          expectFinishTime: '2025-01-20T17:00:00.000Z',
-          deadlineTime: '2025-01-20T17:00:00.000Z',
-          taskStatus: '700',
-          taskStatusName: '进行中',
-          currentStage: '2',
-          currentStageName: '任务接收',
-          myParticipateRole: '1',
-          myParticipateRoleName: '执行人',
-          createTime: '2025-01-07T14:00:00.000Z',
-          updateTime: '2025-01-09T09:15:00.000Z',
-          approvalSyncId: 'APV-2025-001',
-          approvalTaskName: '培训计划审批',
-          approvalAssigneeName: '赵总监',
-          approvalTime: null,
-          canRecall: true,
-          canDel: false,
-          taskFinishCountdown: '11天'
-        },
-        {
-          id: mockTaskId,
-          taskName: '完成设备采购申请',
-          publishUserName: '刘主管',
-          taskSourceName: '导入',
-          taskTagName: '一般',
-          taskContent: '完成办公设备采购申请，包括电脑、打印机等办公设备清单及预算说明。',
-          expectFinishTime: '2025-01-18T16:00:00.000Z',
-          deadlineTime: '2025-01-18T16:00:00.000Z',
-          taskStatus: '900',
-          taskStatusName: '已完成',
-          currentStage: '4',
-          currentStageName: '任务完成',
-          myParticipateRole: '1',
-          myParticipateRoleName: '执行人',
-          createTime: '2025-01-03T11:00:00.000Z',
-          updateTime: '2025-01-08T15:30:00.000Z',
-          approvalSyncId: 'APV-2025-002',
-          approvalTaskName: '采购审批',
-          approvalAssigneeName: '孙经理',
-          approvalTime: '2025-01-08T15:30:00.000Z',
-          canRecall: false,
-          canDel: true,
-          taskFinishCountdown: null
-        },
-        {
-          id: mockTaskId,
-          taskName: '更新部门工作流程文档',
-          publishUserName: '陈主任',
-          taskSourceName: '手动创建',
-          taskTagName: '重要',
-          taskContent: '根据最新管理要求，更新部门各项工作流程文档，确保流程规范化。',
-          expectFinishTime: '2025-01-25T18:00:00.000Z',
-          deadlineTime: '2025-01-25T18:00:00.000Z',
-          taskStatus: '700',
-          taskStatusName: '进行中',
-          currentStage: '2',
-          currentStageName: '任务接收',
-          myParticipateRole: '2',
-          myParticipateRoleName: '配合人',
-          createTime: '2025-01-06T13:00:00.000Z',
-          updateTime: '2025-01-09T08:45:00.000Z',
-          approvalSyncId: null,
-          approvalTaskName: null,
-          approvalAssigneeName: null,
-          approvalTime: null,
-          canRecall: false,
-          canDel: false,
-          taskFinishCountdown: '16天'
-        }
-      ];
-      return mockTasks;
-    }
   }
 };
 </script>
@@ -852,7 +719,7 @@ export default {
 ::v-deep .basic-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 100px);
   overflow: hidden;
 }
 
@@ -863,6 +730,7 @@ export default {
 
 .search-form-container {
   flex-shrink: 0;
+  margin-bottom: 16px;
 }
 
 ::v-deep .avue-crud {
@@ -877,6 +745,7 @@ export default {
     flex-direction: column;
     flex: 1;
     margin: 0;
+    border-radius: 4px;
 
     .el-card__body {
       display: flex;
@@ -898,6 +767,11 @@ export default {
 
   .el-table {
     flex: 1;
+  }
+
+  .el-pagination {
+    flex-shrink: 0;
+    padding: 12px 0;
   }
 }
 </style>

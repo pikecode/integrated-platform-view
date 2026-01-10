@@ -50,6 +50,7 @@
                     v-model="searchParams.department"
                     placeholder="请选择申报科室"
                     clearable
+                    :loading="loadingDepartments"
                   >
                     <el-option
                       v-for="item in deptList"
@@ -114,6 +115,7 @@
                     v-model="searchParams.deptDirector"
                     placeholder="请选择申报科室科主任"
                     clearable
+                    :loading="loadingPersons"
                   >
                     <el-option
                       v-for="item in deptDirectorList"
@@ -130,6 +132,7 @@
                     v-model="searchParams.deptLeader"
                     placeholder="请选择申报科室分管领导"
                     clearable
+                    :loading="loadingPersons"
                   >
                     <el-option
                       v-for="item in deptLeaderList"
@@ -368,6 +371,7 @@
                     v-model="searchParamsCommittee.deptDirector"
                     placeholder="请选择申报科室科主任"
                     clearable
+                    :loading="loadingPersons"
                   >
                     <el-option
                       v-for="item in deptDirectorList"
@@ -384,6 +388,7 @@
                     v-model="searchParamsCommittee.deptLeader"
                     placeholder="请选择申报科室分管领导"
                     clearable
+                    :loading="loadingPersons"
                   >
                     <el-option
                       v-for="item in deptLeaderList"
@@ -571,6 +576,9 @@ export default {
       deptDirectorList: [],
       // 科室分管领导列表
       deptLeaderList: [],
+      // 加载状态
+      loadingDepartments: false,
+      loadingPersons: false,
       // 搜索条件状态
       searchParams: {
         title: '',
@@ -864,15 +872,24 @@ export default {
 
     // 获取科室列表
     async fetchDeptList() {
+      this.loadingDepartments = true;
       try {
         // 从 userInfo 获取 tenantId，如果没有则使用默认值
         const tenantId = this.userInfo?.tenantId || '000000';
         const res = await topicApi.getDeptList(tenantId);
         if (res.data && res.data.code === 200) {
           this.deptList = res.data.data || [];
+          console.log('【科室列表】加载成功:', this.deptList);
+        } else {
+          const errorMsg = res.data?.msg || '加载科室列表失败';
+          console.error('【科室列表】错误:', errorMsg);
+          this.$message.error(errorMsg);
         }
       } catch (error) {
-        console.error('获取科室列表失败：', error);
+        console.error('【科室列表】请求异常：', error);
+        this.$message.error('加载科室列表失败，请检查网络连接');
+      } finally {
+        this.loadingDepartments = false;
       }
     },
 
@@ -902,14 +919,29 @@ export default {
 
     // 获取科室人员（科主任和分管领导）
     async fetchDeptUsers(deptId, type) {
+      this.loadingPersons = true;
       try {
         const res = await topicApi.getDeptUsers(deptId);
         if (res.data && res.data.code === 200) {
           const data = res.data.data;
-          // 设置科主任列表
-          this.deptDirectorList = data.directorList || [];
-          // 设置分管领导列表（将单个对象转为数组）
-          this.deptLeaderList = data.leader ? [data.leader] : [];
+          // 获取用户列表
+          const userList = data.userList || [];
+
+          // 转换为下拉列表选项格式
+          this.deptDirectorList = userList.map(user => ({
+            id: user.id,
+            realName: user.realName || user.name,
+            name: user.name
+          }));
+
+          // 分管领导列表（如果有的话）
+          this.deptLeaderList = userList.map(user => ({
+            id: user.id,
+            realName: user.realName || user.name,
+            name: user.name
+          }));
+
+          console.log('【科室人员】加载成功:', { deptDirectorList: this.deptDirectorList, deptLeaderList: this.deptLeaderList });
 
           // 清空之前选择的值
           if (type === 'office') {
@@ -919,9 +951,20 @@ export default {
             this.searchParamsCommittee.deptDirector = '';
             this.searchParamsCommittee.deptLeader = '';
           }
+        } else {
+          const errorMsg = res.data?.msg || '加载科室人员失败';
+          console.error('【科室人员】错误:', errorMsg);
+          this.$message.error(errorMsg);
+          this.deptDirectorList = [];
+          this.deptLeaderList = [];
         }
       } catch (error) {
-        console.error('获取科室人员失败：', error);
+        console.error('【科室人员】请求异常：', error);
+        this.$message.error('加载科室人员失败，请检查网络连接');
+        this.deptDirectorList = [];
+        this.deptLeaderList = [];
+      } finally {
+        this.loadingPersons = false;
       }
     },
 
@@ -984,10 +1027,6 @@ export default {
 
           // 强制更新视图，确保v-if判断能正确执行
           this.$nextTick(() => {
-            // 刷新avue-crud组件，清除任何缓存
-            if (this.$refs.crud) {
-              this.$refs.crud.reload();
-            }
             this.$forceUpdate();
           });
         } else {
@@ -1002,7 +1041,6 @@ export default {
         this.page.total = 0;
       } finally {
         this.loading = false;
-        this.$refs.crud?.toggleSelection();
       }
     },
 
@@ -1265,10 +1303,6 @@ export default {
 
           // 强制更新视图，确保v-if判断能正确执行
           this.$nextTick(() => {
-            // 刷新avue-crud组件，清除任何缓存
-            if (this.$refs.crudCommittee) {
-              this.$refs.crudCommittee.reload();
-            }
             this.$forceUpdate();
           });
         } else {
@@ -1283,7 +1317,6 @@ export default {
         this.pageCommittee.total = 0;
       } finally {
         this.loadingCommittee = false;
-        this.$refs.crudCommittee?.toggleSelection();
       }
     },
 

@@ -134,16 +134,9 @@ export const topicFormOption = {
           rules: [
             { required: true, message: '请输入议题内容摘要', trigger: 'blur' }
           ]
-        }
-      ]
-    },
-    {
-      icon: 'el-icon-edit',
-      label: '会前讨论情况及建议解决方案',
-      prop: 'group2',
-      column: [
+        },
         {
-          label: '',
+          label: '会前讨论情况及建议解决方案',
           prop: 'discussion',
           type: 'textarea',
           span: 24,
@@ -151,14 +144,7 @@ export const topicFormOption = {
           maxlength: 500,
           showWordLimit: true,
           placeholder: '请输入会前讨论情况及建议解决方案（500个字以内）'
-        }
-      ]
-    },
-    {
-      icon: 'el-icon-upload',
-      label: '相关附件',
-      prop: 'group3',
-      column: [
+        },
         {
           label: '上传文件',
           prop: 'attachments',
@@ -176,14 +162,14 @@ export const topicFormOption = {
             url: 'fileKey',
             name: 'fileName'
           },
-          dataType: 'string'
+          dataType: 'array'
         }
       ]
     },
     {
       icon: 'el-icon-info',
       label: '其他信息',
-      prop: 'group4',
+      prop: 'group2',
       column: [
         {
           label: '是否三重一大',
@@ -243,6 +229,29 @@ export const topicFormOption = {
           ]
         },
         {
+          label: '会议类型',
+          prop: 'meetingType',
+          type: 'select',
+          span: 12,
+          dicData: [],
+          placeholder: '请选择会议类型',
+          rules: [
+            { required: true, message: '请选择会议类型', trigger: 'change' }
+          ]
+        },
+        {
+          label: '期望汇报时间',
+          prop: 'expectedTime',
+          type: 'date',
+          span: 12,
+          format: 'YYYY-MM-DD',
+          valueFormat: 'YYYY-MM-DD',
+          placeholder: '选择到某天',
+          rules: [
+            { required: true, message: '请选择期望汇报时间', trigger: 'change' }
+          ]
+        },
+        {
           label: '是否存在舆情风险',
           prop: 'hasRisk',
           type: 'select',
@@ -272,36 +281,6 @@ export const topicFormOption = {
           span: 24,
           rows: 4,
           placeholder: '请输入风险应对措施'
-        }
-      ]
-    },
-    {
-      icon: 'el-icon-date',
-      label: '会议信息',
-      prop: 'group5',
-      column: [
-        {
-          label: '会议类型',
-          prop: 'meetingType',
-          type: 'select',
-          span: 12,
-          dicData: [],
-          placeholder: '请选择会议类型',
-          rules: [
-            { required: true, message: '请选择会议类型', trigger: 'change' }
-          ]
-        },
-        {
-          label: '期望汇报时间',
-          prop: 'expectedTime',
-          type: 'date',
-          span: 12,
-          format: 'YYYY-MM-DD',
-          valueFormat: 'YYYY-MM-DD',
-          placeholder: '选择到某天',
-          rules: [
-            { required: true, message: '请选择期望汇报时间', trigger: 'change' }
-          ]
         }
       ]
     }

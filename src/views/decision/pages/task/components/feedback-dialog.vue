@@ -1,11 +1,11 @@
 <template>
   <el-dialog
-    title="任务接收"
+    title="反馈"
     v-model="visible"
     width="600px"
     @close="handleClose"
   >
-    <div class="accept-dialog-content">
+    <div class="feedback-dialog-content">
       <!-- 任务反馈 -->
       <div class="form-item">
         <label class="form-label">任务反馈：</label>
@@ -62,7 +62,7 @@
     </div>
 
     <template #footer>
-      <el-button type="primary" @click="handleSubmit">接收反馈</el-button>
+      <el-button type="primary" @click="handleSubmit">提交反馈</el-button>
       <el-button @click="handleClose">取消</el-button>
     </template>
   </el-dialog>
@@ -72,7 +72,7 @@
 import request from '@/axios';
 
 export default {
-  name: 'AcceptDialog',
+  name: 'FeedbackDialog',
   props: {
     modelValue: {
       type: Boolean,
@@ -171,17 +171,13 @@ export default {
         return;
       }
 
-      const acceptData = {
+      const feedbackData = {
         taskId: this.taskData.id,
-        feedback: this.form.feedback,
-        attachments: this.fileList.map(file => ({
-          fileName: file.name,
-          fileUrl: file.url,
-          fileId: file.id
-        }))
+        feedbackContent: this.form.feedback,
+        attachmentIdList: this.fileList.map(file => file.id).filter(id => id)
       };
 
-      this.$emit('submit', acceptData);
+      this.$emit('submit', feedbackData);
       this.handleClose();
     },
 
@@ -195,7 +191,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.accept-dialog-content {
+.feedback-dialog-content {
   .form-item {
     margin-bottom: 20px;
 
